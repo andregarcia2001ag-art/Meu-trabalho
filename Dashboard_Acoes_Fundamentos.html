@@ -1,0 +1,1996 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quant Fundamentals — Análise de Ações Ibovespa</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+/* ================================================================
+   DESIGN SYSTEM — BRAINVEST INSTITUTIONAL
+   Paleta: laranja #E8681A · verde #3A4A1E · bege #EDE8DF
+   ================================================================ */
+:root{
+  /* Cores Brainvest */
+  --o:#E8681A;  --ol:#F0965A;  --op:rgba(232,104,26,0.10);
+  --g:#3A4A1E;  --gm:#506128;  --gl:#7C8B3A; --gp:rgba(58,74,30,0.10);
+  --gy:#8A7E73; --gyl:#E8E2D9; --gym:#D0C8BC;--gyd:#4A3F35;
+  --w:#FDFAF6;  --bg:#EDE8DF;  --tx:#2A2218; --ts:#6B5E53;
+  --red:#C0392B;--redbg:#FBE8E8;
+  --grn:#27AE60;--grnbg:#E8F8EE;
+  --sh:0 1px 4px rgba(42,34,24,0.10);
+  --r:3px; --b:1px solid #CFC8BE;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:14px;scroll-behavior:smooth;}
+body{font-family:'Lato','Segoe UI',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.5;}
+button{cursor:pointer;font-family:inherit;}
+
+/* ── HEADER ──────────────────────────────────────── */
+.hd{background:var(--w);border-bottom:2px solid var(--gym);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:300;box-shadow:0 2px 6px rgba(42,34,24,0.08);}
+.hd-brand{display:flex;align-items:center;gap:12px;}
+.hd-mark{width:36px;height:36px;background:var(--o);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#fff;letter-spacing:0.5px;}
+.hd-title{font-size:15px;font-weight:700;color:var(--tx);}
+.hd-sub{font-size:10px;color:var(--gy);margin-top:1px;font-style:italic;}
+.hd-right{display:flex;align-items:center;gap:8px;}
+.hd-chip{font-size:10px;font-weight:700;padding:3px 10px;border-radius:var(--r);background:var(--gyl);color:var(--ts);border:1px solid var(--gym);}
+.hd-chip.live{background:var(--gp);border-color:rgba(80,97,40,0.3);color:var(--gm);display:flex;align-items:center;gap:5px;}
+.hd-chip.live::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--gl);flex-shrink:0;animation:blink 1.8s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hd-refresh{background:none;border:1px solid var(--gym);border-radius:var(--r);padding:3px 10px;font-size:10px;font-weight:700;color:var(--ts);transition:all 0.15s;}
+.hd-refresh:hover{background:var(--op);color:var(--o);border-color:var(--ol);}
+.hd-refresh.spin svg{animation:rotating 1s linear infinite;}
+@keyframes rotating{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* ── UNIVERSE BAR ────────────────────────────────── */
+.univ-bar{background:var(--w);border-bottom:1px solid var(--gym);padding:6px 28px;display:flex;align-items:center;gap:16px;font-size:11px;color:var(--ts);position:sticky;top:56px;z-index:200;}
+.univ-tag{display:inline-flex;align-items:center;gap:4px;background:var(--op);border:1px solid var(--ol);color:var(--o);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.univ-stats{margin-left:auto;display:flex;align-items:center;gap:16px;}
+.univ-stat{display:flex;align-items:center;gap:5px;}
+.univ-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.univ-stat strong{color:var(--tx);}
+.live-badge-bar{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--gm);}
+.live-dot{width:6px;height:6px;background:var(--gl);border-radius:50%;animation:blink 1.8s infinite;}
+
+/* ── NAVIGATION ──────────────────────────────────── */
+.nav{background:var(--w);border-bottom:2px solid var(--gym);padding:8px 28px;display:flex;align-items:center;gap:5px;overflow-x:auto;position:sticky;top:calc(56px + 33px);z-index:100;}
+.nav::-webkit-scrollbar{height:2px;}.nav::-webkit-scrollbar-thumb{background:var(--gym);}
+.nav-sep{width:1px;background:var(--gym);margin:2px 4px;height:20px;flex-shrink:0;}
+.nav-grp{font-size:9px;font-weight:700;color:var(--gy);text-transform:uppercase;letter-spacing:0.8px;padding:0 6px;white-space:nowrap;flex-shrink:0;}
+.nt{display:flex;align-items:center;gap:5px;padding:5px 13px;font-size:11.5px;font-weight:600;color:var(--gy);border:1px solid var(--gym);border-radius:var(--r);background:transparent;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all 0.15s;}
+.nt:hover{color:var(--o);border-color:var(--ol);background:var(--op);}
+.nt.a{color:var(--o);border-color:var(--o);background:var(--op);font-weight:700;}
+.nt-badge{font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;background:var(--gym);color:var(--gyd);}
+.nt.a .nt-badge{background:var(--o);color:#fff;}
+.nt-badge.lbadge{background:var(--grnbg);color:var(--grn);}
+
+/* ── PAGES ───────────────────────────────────────── */
+.pg{display:none;padding:22px 28px 50px;max-width:1800px;margin:0 auto;}
+.pg.a{display:block;}
+.pg-title{font-size:18px;font-weight:700;color:var(--o);font-style:italic;margin-bottom:2px;}
+.pg-desc{font-size:11.5px;color:var(--ts);margin-bottom:18px;font-style:italic;}
+.layer-lbl{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--gy);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gym);width:100%;}
+.layer-tag{background:var(--o);color:#fff;font-size:9px;padding:2px 7px;border-radius:var(--r);}
+
+/* ── GRIDS ───────────────────────────────────────── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;}
+.g64{display:grid;grid-template-columns:60fr 40fr;gap:12px;margin-bottom:12px;}
+.g73{display:grid;grid-template-columns:70fr 30fr;gap:12px;margin-bottom:12px;}
+.mb{margin-bottom:12px;}
+
+/* ── KPI CARDS ───────────────────────────────────── */
+.krow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
+.krow4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.krow3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.kc{background:var(--w);border:var(--b);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.kc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+.kc.kco::before{background:var(--o);}
+.kc.kcg::before{background:var(--g);}
+.kc.kcy::before{background:var(--gy);}
+.kc.kcr::before{background:var(--red);}
+.kc-lbl{font-size:10px;font-weight:700;color:var(--ts);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px;}
+.kc-val{font-size:22px;font-weight:900;line-height:1;color:var(--tx);}
+.kc-val.vo{color:var(--o);}.kc-val.vg{color:var(--g);}.kc-val.vr{color:var(--red);}
+.kc-sub{font-size:10.5px;color:var(--ts);margin-top:4px;}
+
+/* ── CARDS ───────────────────────────────────────── */
+.card{background:var(--w);border:var(--b);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh);}
+.card-hdr{display:flex;align-items:center;gap:8px;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--gym);}
+.card-title{font-size:12.5px;font-weight:700;color:var(--tx);flex:1;font-style:italic;}
+.card-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:var(--r);background:var(--gyl);color:var(--gyd);border:1px solid var(--gym);}
+.card-badge.bo{background:var(--op);color:var(--o);border-color:var(--ol);}
+.card-badge.bg{background:var(--gp);color:var(--g);border-color:rgba(58,74,30,0.3);}
+.info-btn{width:17px;height:17px;border-radius:50%;background:var(--gyl);border:1px solid var(--gym);color:var(--ts);font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;}
+.info-btn:hover{background:var(--op);color:var(--o);border-color:var(--ol);}
+
+/* ── TABLES ──────────────────────────────────────── */
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+thead tr{border-bottom:2px solid var(--gym);}
+th{text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:0.5px;background:var(--g);white-space:nowrap;}
+td{padding:7px 10px;border-bottom:1px solid var(--gyl);color:var(--tx);white-space:nowrap;}
+tr:last-child td{border-bottom:none;}
+tbody tr{transition:background 0.1s;cursor:pointer;}
+tbody tr:hover td{background:#F5F0E8;}
+.tr{text-align:right;font-variant-numeric:tabular-nums;}.tc{text-align:center;}
+
+/* ── VERDICT BADGES ──────────────────────────────── */
+.verdict{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:3px 9px;border-radius:var(--r);white-space:nowrap;}
+.vbuy{background:var(--grnbg);color:var(--grn);border:1px solid rgba(39,174,96,0.3);}
+.vsell{background:var(--redbg);color:var(--red);border:1px solid rgba(192,57,43,0.3);}
+.vhold{background:#FBF3E0;color:#8B6914;border:1px solid rgba(139,105,20,0.3);}
+.vobs{background:var(--op);color:var(--o);border:1px solid var(--ol);}
+
+/* ── BADGES ──────────────────────────────────────── */
+.pill{display:inline-block;padding:2px 7px;border-radius:var(--r);font-size:10px;font-weight:700;white-space:nowrap;}
+.pill-buy{background:var(--grnbg);color:var(--grn);}
+.pill-sell{background:var(--redbg);color:var(--red);}
+.pill-hold{background:#FBF3E0;color:#8B6914;}
+.pill-neu{background:var(--gyl);color:var(--gyd);}
+.pill-o{background:var(--op);color:var(--o);}
+/* Value badges */
+.badge-cheap{background:var(--grnbg);color:var(--grn);border:1px solid rgba(39,174,96,0.3);padding:2px 7px;border-radius:var(--r);font-size:9px;font-weight:700;}
+.badge-exp{background:var(--redbg);color:var(--red);border:1px solid rgba(192,57,43,0.3);padding:2px 7px;border-radius:var(--r);font-size:9px;font-weight:700;}
+.badge-fair{background:var(--gyl);color:var(--gyd);border:1px solid var(--gym);padding:2px 7px;border-radius:var(--r);font-size:9px;font-weight:700;}
+.badge-attr{background:var(--op);color:var(--o);border:1px solid var(--ol);padding:2px 7px;border-radius:var(--r);font-size:9px;font-weight:700;}
+
+/* ── PROGRESS BAR ────────────────────────────────── */
+.bw{display:flex;align-items:center;gap:6px;}
+.bt{flex:1;height:5px;background:var(--gym);border-radius:3px;overflow:hidden;min-width:50px;}
+.bf{height:100%;border-radius:3px;transition:width 0.4s ease;}
+.bv{font-size:10px;font-weight:700;min-width:26px;text-align:right;}
+
+/* ── HERO — TOP PICKS ────────────────────────────── */
+.hero{background:linear-gradient(135deg,var(--g) 0%,#2C3B13 100%);border-radius:var(--r);padding:22px 26px;margin-bottom:18px;box-shadow:0 4px 20px rgba(58,74,30,0.25);}
+.hero-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;}
+.hero-title{font-size:17px;font-weight:700;color:#fff;font-style:italic;}
+.hero-sub{font-size:10.5px;color:rgba(255,255,255,0.55);margin-top:3px;}
+.hero-meta{font-size:10px;color:rgba(255,255,255,0.4);text-align:right;}
+.top-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.top-card{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);border-radius:var(--r);padding:13px 15px;cursor:pointer;position:relative;overflow:hidden;transition:background 0.15s;}
+.top-card:hover{background:rgba(255,255,255,0.14);}
+.top-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--o),var(--ol));}
+.top-card.rank2::before{background:linear-gradient(90deg,var(--gl),#A0B060);}
+.top-card.rank3::before{background:linear-gradient(90deg,var(--gym),var(--gy));}
+.top-card.rank4::before,.top-card.rank5::before{background:rgba(255,255,255,0.15);}
+.top-rank{font-size:9px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.top-ticker{font-size:20px;font-weight:900;color:#fff;line-height:1;}
+.top-live-price{font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);margin-top:2px;min-height:15px;}
+.top-sector{font-size:9px;color:rgba(255,255,255,0.4);margin-bottom:8px;}
+.top-rec{display:inline-flex;font-size:9px;font-weight:700;padding:2px 7px;border-radius:var(--r);margin-bottom:8px;}
+.top-rec.rc{background:rgba(39,174,96,0.35);color:#86efac;}
+.top-rec.ro{background:rgba(232,104,26,0.35);color:var(--ol);}
+.top-rec.rn{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);}
+.top-metrics{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;}
+.top-ml{font-size:9px;color:rgba(255,255,255,0.4);}
+.top-mv{font-size:13px;font-weight:700;color:#fff;}
+.top-mv.up{color:#86efac;}.top-mv.dn{color:#fca5a5;}
+.top-conv{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:var(--r);text-transform:uppercase;letter-spacing:0.4px;}
+.tcA{background:rgba(39,174,96,0.3);color:#86efac;}
+.tcM{background:rgba(232,104,26,0.25);color:var(--ol);}
+.tcB{background:rgba(192,57,43,0.25);color:#fca5a5;}
+.top-brief{font-size:9.5px;color:rgba(255,255,255,0.5);margin-top:6px;line-height:1.45;}
+
+/* ── SCORE EXPLAINER ─────────────────────────────── */
+.sc-exp{padding:2px 0;}
+.frow{display:grid;grid-template-columns:85px 1fr 32px;align-items:center;gap:8px;margin-bottom:6px;}
+.flbl{font-size:10px;font-weight:600;color:var(--ts);}
+.ftrack{height:7px;background:var(--gym);border-radius:3px;overflow:hidden;}
+.ffill{height:100%;border-radius:3px;transition:width 0.5s ease;}
+.fnum{font-size:10px;font-weight:700;text-align:right;}
+
+/* ── DETAIL PANEL ────────────────────────────────── */
+.det-ov{position:fixed;inset:0;background:rgba(42,34,24,0.5);z-index:500;display:none;align-items:flex-start;justify-content:flex-end;backdrop-filter:blur(3px);}
+.det-ov.open{display:flex;}
+.det-panel{width:430px;height:100vh;background:var(--w);box-shadow:-6px 0 30px rgba(42,34,24,0.15);overflow-y:auto;display:flex;flex-direction:column;animation:slideIn 0.22s ease-out;}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.det-hdr{padding:18px 22px;background:var(--g);display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0;}
+.det-ticker{font-size:26px;font-weight:900;color:#fff;}
+.det-sector{font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;}
+.det-price{font-size:13px;font-weight:700;color:rgba(255,255,255,0.7);margin-top:3px;}
+.det-close{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:50%;width:28px;height:28px;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.det-body{padding:18px 22px;flex:1;}
+.det-verdict{border-left:4px solid var(--grn);background:var(--grnbg);border-radius:var(--r);padding:12px 14px;margin-bottom:16px;}
+.det-verdict.vh{border-left-color:#D4A020;background:#FBF3E0;}
+.det-verdict.vs{border-left-color:var(--red);background:var(--redbg);}
+.dv-title{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:3px;}
+.dv-body{font-size:11px;color:var(--ts);line-height:1.6;}
+.dv-body strong{color:var(--tx);}
+.det-sec{margin-bottom:16px;}
+.det-sec-title{font-size:9px;font-weight:700;color:var(--ts);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:8px;}
+.det-model-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.det-mc{background:var(--gyl);border:var(--b);border-radius:var(--r);padding:9px 11px;}
+.dmc-name{font-size:9px;font-weight:700;color:var(--ts);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;}
+.dmc-val{font-size:15px;font-weight:800;}
+.dmc-lbl{font-size:9px;color:var(--ts);}
+.det-risks{list-style:none;}
+.det-risks li{font-size:11px;color:var(--ts);padding:5px 0;border-bottom:1px solid var(--gyl);display:flex;gap:7px;}
+.det-risks li:last-child{border:none;}
+.ricon{color:var(--red);font-weight:700;flex-shrink:0;}
+
+/* ── MODEL INFO MODAL ────────────────────────────── */
+.mi-ov{position:fixed;inset:0;background:rgba(42,34,24,0.45);z-index:600;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.mi-ov.open{display:flex;}
+.mi-box{width:470px;max-width:95vw;background:var(--w);border-radius:var(--r);box-shadow:0 8px 30px rgba(42,34,24,0.2);padding:24px;animation:fadeUp 0.2s ease-out;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.mi-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;}
+.mi-name{font-size:14px;font-weight:700;color:var(--o);font-style:italic;}
+.mi-close{background:none;border:none;font-size:17px;color:var(--ts);cursor:pointer;}
+.mi-blk{margin-bottom:12px;}
+.mi-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--ts);margin-bottom:3px;}
+.mi-txt{font-size:11.5px;color:var(--ts);line-height:1.65;}
+.mi-int{background:var(--op);border:1px solid var(--ol);border-radius:var(--r);padding:9px 11px;font-size:11px;color:var(--o);font-weight:500;line-height:1.6;}
+.mi-lim{background:#FBF3E0;border:1px solid rgba(139,105,20,0.3);border-radius:var(--r);padding:9px 11px;font-size:11px;color:#8B6914;line-height:1.55;}
+
+/* ── TOOLTIP SYSTEM ──────────────────────────────── */
+.tip{position:relative;cursor:help;border-bottom:1px dashed var(--gym);}
+.tip:hover .tip-box{display:block;}
+.tip-box{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);z-index:1000;width:220px;background:var(--w);border:var(--b);border-radius:var(--r);box-shadow:0 4px 16px rgba(42,34,24,0.15);padding:10px 12px;pointer-events:none;}
+.tip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--gym);}
+.tip-title{font-size:10px;font-weight:700;color:var(--o);margin-bottom:4px;}
+.tip-body{font-size:10.5px;color:var(--ts);line-height:1.55;}
+.tip-int{font-size:9.5px;color:var(--gm);font-weight:600;margin-top:4px;padding-top:4px;border-top:1px solid var(--gym);}
+
+/* ── PROGRESSIVE DISCLOSURE ──────────────────────── */
+.tbl-toggle{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--o);background:none;border:none;padding:5px 0;margin-bottom:10px;cursor:pointer;}
+.tbl-toggle:hover{text-decoration:underline;}
+.ti{transition:transform 0.2s;}
+.tbl-toggle.exp .ti{transform:rotate(180deg);}
+.tbl-full{display:none;}
+.tbl-full.vis{display:block;}
+
+/* ── INSIGHT CARDS ───────────────────────────────── */
+.ig-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.ig-card{background:var(--w);border:var(--b);border-left:4px solid var(--o);border-radius:var(--r);padding:13px 15px;}
+.ig-card.ig{border-left-color:var(--g);}
+.ig-card.ir{border-left-color:var(--red);}
+.ig-card.iy{border-left-color:#D4A020;}
+.ic-title{font-size:11.5px;font-weight:700;color:var(--tx);margin-bottom:4px;}
+.ic-body{font-size:11px;color:var(--ts);line-height:1.6;}
+.ic-body strong{color:var(--tx);}
+
+/* ── PORTFOLIO ───────────────────────────────────── */
+.port-row{display:grid;grid-template-columns:75px 1fr 45px 90px;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--gyl);}
+.port-row:last-child{border:none;}
+.port-ticker{font-size:13px;font-weight:800;color:var(--tx);}
+.port-sector{font-size:9px;color:var(--ts);}
+.port-pct{font-size:12px;font-weight:700;color:var(--o);text-align:right;}
+.port-rat{font-size:10px;color:var(--ts);line-height:1.4;}
+
+/* ── COLLAPSIBLE EXPLAINER ───────────────────────── */
+.meb{background:var(--op);border:1px solid var(--ol);border-radius:var(--r);padding:12px 15px;margin-bottom:14px;}
+.meb-toggle{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:700;color:var(--o);background:none;border:none;width:100%;text-align:left;cursor:pointer;}
+.meb-body{margin-top:10px;display:none;}
+.meb-body.open{display:block;}
+.meb-sec{margin-bottom:9px;}
+.meb-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--o);margin-bottom:3px;}
+.meb-txt{font-size:11px;color:var(--ts);line-height:1.6;}
+.meb-int{background:rgba(232,104,26,0.08);border-radius:var(--r);padding:7px 9px;font-size:11px;color:var(--o);font-weight:500;}
+.meb-lim{background:rgba(139,105,20,0.07);border-radius:var(--r);padding:7px 9px;font-size:11px;color:#8B6914;}
+
+/* ── MACRO CARDS ─────────────────────────────────── */
+.macro-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.mkc{background:var(--w);border:var(--b);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.mkc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--o);}
+.mkc-lbl{font-size:10px;font-weight:700;color:var(--ts);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px;}
+.mkc-val{font-size:26px;font-weight:900;color:var(--tx);line-height:1;}
+.mkc-val.loading{opacity:0.35;font-size:18px;}
+.mkc-sub{font-size:10px;color:var(--ts);margin-top:4px;}
+.mkc-chg{font-size:10px;font-weight:700;margin-top:4px;}
+
+/* ── ALERT ───────────────────────────────────────── */
+.alert{padding:10px 14px;border-radius:var(--r);font-size:11px;margin-bottom:14px;display:flex;align-items:flex-start;gap:8px;border-left:3px solid;}
+.alert-info{background:var(--op);color:var(--o);border-color:var(--ol);}
+.alert-warn{background:#FBF3E0;color:#8B6914;border-color:#D4A020;}
+.alert-icon{font-weight:800;flex-shrink:0;}
+
+/* ── LIVE PRICE DISPLAY ──────────────────────────── */
+.live-price{font-size:12px;font-weight:700;}
+.price-up{color:var(--grn);}
+.price-dn{color:var(--red);}
+.price-neu{color:var(--ts);}
+.live-status{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--ts);}
+.live-status.refreshing{color:var(--o);}
+
+/* ── SECTOR BADGE ────────────────────────────────── */
+.sec-bd{display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:var(--r);background:var(--gyl);color:var(--gyd);border:1px solid var(--gym);}
+
+/* ── MEDALS ──────────────────────────────────────── */
+.md{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:9px;font-weight:900;flex-shrink:0;}
+.md1{background:#F0C040;color:#5A3A00;}.md2{background:#C0C8D0;color:#2A3440;}.md3{background:#C8784A;color:#fff;}
+.mdn{background:var(--gyl);color:var(--gyd);}
+
+/* ── COLOR HELPERS ───────────────────────────────── */
+.pos{color:var(--grn)!important;font-weight:700;}
+.neg{color:var(--red)!important;font-weight:700;}
+.muted{color:var(--ts);}
+
+/* ── FILTER BAR ──────────────────────────────────── */
+.fbar{display:flex;gap:5px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+.fbtn{padding:4px 11px;font-size:11px;font-weight:600;border:1px solid var(--gym);border-radius:20px;background:var(--w);color:var(--ts);transition:all 0.15s;cursor:pointer;font-family:inherit;}
+.fbtn:hover{border-color:var(--ol);color:var(--o);}
+.fbtn.fa{background:var(--o);color:#fff;border-color:var(--o);font-weight:700;}
+.finp{padding:4px 10px;font-size:11px;border:1px solid var(--gym);border-radius:var(--r);background:var(--w);color:var(--tx);outline:none;font-family:inherit;width:145px;}
+.finp:focus{border-color:var(--ol);}
+
+/* ── FOOTER ──────────────────────────────────────── */
+.ft{padding:14px 28px;font-size:10px;color:var(--ts);border-top:2px solid var(--gym);background:var(--w);text-align:center;margin-top:30px;font-style:italic;}
+
+/* ── RESPONSIVE ──────────────────────────────────── */
+@media(max-width:1400px){.top-grid{grid-template-columns:repeat(3,1fr);}.krow{grid-template-columns:repeat(3,1fr);}.g2,.g64,.g73{grid-template-columns:1fr;}.ig-grid{grid-template-columns:1fr;}}
+@media(max-width:900px){.pg{padding:14px 14px 40px;}.hd,.univ-bar,.nav{padding-left:14px;padding-right:14px;}.krow,.krow4{grid-template-columns:repeat(2,1fr);}.top-grid{grid-template-columns:repeat(2,1fr);}.macro-kpis{grid-template-columns:repeat(2,1fr);}.g3{grid-template-columns:1fr;}.det-panel{width:100vw;}.port-row{grid-template-columns:70px 1fr;}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hd">
+  <div class="hd-brand">
+    <div class="hd-mark">QF</div>
+    <div>
+      <div class="hd-title">Quant Fundamentals — Ibovespa</div>
+      <div class="hd-sub">Análise Buy-Side · Market Cap ≥ R$ 5 B · DCF · Graham · DDM · Múltiplos · Fama-French</div>
+    </div>
+  </div>
+  <div class="hd-right">
+    <div class="live-status" id="apiStatus"><div class="live-dot" style="background:var(--gym);"></div> Aguardando</div>
+    <span class="hd-chip" id="hd-date"></span>
+    <span class="hd-chip live" id="hd-selic">SELIC 14,75%</span>
+    <button class="hd-refresh" id="refreshBtn" onclick="refreshLivePrices()" title="Atualizar preços">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      Atualizar
+    </button>
+  </div>
+</header>
+
+<!-- UNIVERSE BAR -->
+<div class="univ-bar">
+  <span>Filtro ativo:</span>
+  <span class="univ-tag">Market Cap ≥ R$ 5 B</span>
+  <span class="univ-tag">Liquidez ≥ R$ 1 M</span>
+  <div class="univ-stats">
+    <div class="univ-stat"><span class="univ-dot" style="background:var(--gym)"></span>Total: <strong id="fu-total">134</strong></div>
+    <div class="univ-stat"><span class="univ-dot" style="background:var(--o)"></span>Filtrado: <strong id="fu-filtered">—</strong></div>
+    <div class="univ-stat"><span class="univ-dot" style="background:var(--grn)"></span>LPA+: <strong id="fu-lpa">—</strong></div>
+    <div class="live-badge-bar"><div class="live-dot"></div><span id="lastUpdate">—</span></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nt" onclick="showTab('macro',this)">Cenário Macro <span class="nt-badge lbadge" id="nb-mac">LIVE</span></div>
+  <div class="nav-sep"></div>
+  <div class="nt a" onclick="showTab('intersecao',this)">Oportunidades <span class="nt-badge" id="nb-int">—</span></div>
+  <div class="nav-sep"></div>
+  <span class="nav-grp">Screening</span>
+  <div class="nt" onclick="showTab('multiplos',this)">Múltiplos <span class="nt-badge" id="nb-mul">—</span></div>
+  <div class="nt" onclick="showTab('fama',this)">Fama-French <span class="nt-badge" id="nb-ff">—</span></div>
+  <div class="nav-sep"></div>
+  <span class="nav-grp">Valuation</span>
+  <div class="nt" onclick="showTab('dcf',this)">DCF <span class="nt-badge" id="nb-dcf">—</span></div>
+  <div class="nt" onclick="showTab('gordon',this)">DDM/Gordon <span class="nt-badge" id="nb-gor">—</span></div>
+  <div class="nav-sep"></div>
+  <span class="nav-grp">Conservador</span>
+  <div class="nt" onclick="showTab('graham',this)">Graham <span class="nt-badge" id="nb-gra">—</span></div>
+  <div class="nav-sep"></div>
+  <div class="nt" onclick="showTab('setorial',this)">Setorial</div>
+</nav>
+
+<!-- MODEL INFO MODAL -->
+<div class="mi-ov" id="miOv" onclick="closeMI(event)">
+  <div class="mi-box">
+    <div class="mi-hdr">
+      <div class="mi-name" id="mi-name">—</div>
+      <button class="mi-close" onclick="closeMI(true)">✕</button>
+    </div>
+    <div class="mi-blk"><div class="mi-lbl">O que é</div><div class="mi-txt" id="mi-what">—</div></div>
+    <div class="mi-blk"><div class="mi-lbl">Como funciona</div><div class="mi-txt" id="mi-how">—</div></div>
+    <div class="mi-blk"><div class="mi-lbl">Como interpretar</div><div class="mi-int" id="mi-int">—</div></div>
+    <div class="mi-blk"><div class="mi-lbl">Limitação</div><div class="mi-lim" id="mi-lim">—</div></div>
+  </div>
+</div>
+
+<!-- ASSET DETAIL PANEL -->
+<div class="det-ov" id="detOv" onclick="closeDet(event)">
+  <div class="det-panel">
+    <div class="det-hdr">
+      <div>
+        <div class="det-ticker" id="dt-ticker">—</div>
+        <div class="det-sector" id="dt-sector">—</div>
+        <div class="det-price" id="dt-price">—</div>
+      </div>
+      <button class="det-close" onclick="closeDet(true)">✕</button>
+    </div>
+    <div class="det-body">
+      <div id="dt-verdict" class="det-verdict mb">
+        <div class="dv-title" id="dt-rec-title">—</div>
+        <div class="dv-body" id="dt-rec-body">—</div>
+      </div>
+      <div class="det-sec"><div class="det-sec-title">Decomposição do Score</div><div id="dt-breakdown"></div></div>
+      <div class="det-sec"><div class="det-sec-title">Por Modelo</div><div class="det-model-grid" id="dt-models"></div></div>
+      <div class="det-sec"><div class="det-sec-title">Gráfico de Fatores</div><div id="dt-radar" style="height:210px;"></div></div>
+      <div class="det-sec"><div class="det-sec-title">Riscos Identificados</div><ul class="det-risks" id="dt-risks"></ul></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: MACRO ════════════════════════════════════════════════ -->
+<main class="pg" id="pg-macro">
+  <div class="pg-title">Cenário Macroeconômico</div>
+  <div class="pg-desc">Dados em tempo real via BCB/SGS · Custo de capital (Ke) usado em todos os modelos atualizado automaticamente</div>
+
+  <div class="macro-kpis">
+    <div class="mkc"><div class="mkc-lbl">SELIC / CDI <span class="tip" style="font-size:9px;border-bottom:none;cursor:help;" title="">ⓘ<span class="tip-box"><div class="tip-title">SELIC / CDI</div><div class="tip-body">Taxa básica de juros do Brasil. Define o retorno sem risco (Rf) no modelo CAPM.</div><div class="tip-int">Quanto maior a SELIC, maior o custo de capital e menor o múltiplo justo das ações.</div></span></span></div><div class="mkc-val loading" id="ml-selic">—</div><div class="mkc-sub" id="ml-selic-sub">Carregando...</div><div class="mkc-chg" id="ml-selic-chg"></div></div>
+    <div class="mkc" style="--o:#C0392B"><div class="mkc-lbl">IPCA (12 meses)</div><div class="mkc-val loading" id="ml-ipca">—</div><div class="mkc-sub" id="ml-ipca-sub">Carregando...</div><div class="mkc-chg" id="ml-ipca-chg"></div></div>
+    <div class="mkc" style="--o:var(--gm)"><div class="mkc-lbl">USD / BRL (PTAX)</div><div class="mkc-val loading" id="ml-usd">—</div><div class="mkc-sub" id="ml-usd-sub">Carregando...</div><div class="mkc-chg" id="ml-usd-chg"></div></div>
+    <div class="mkc" style="--o:var(--gy)"><div class="mkc-lbl">IGP-M (12 meses)</div><div class="mkc-val loading" id="ml-igpm">—</div><div class="mkc-sub" id="ml-igpm-sub">Carregando...</div><div class="mkc-chg" id="ml-igpm-chg"></div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">CAPM — Premissas do Custo de Capital</div><span class="card-badge bo">Live</span></div>
+      <div class="alert alert-info" style="margin-bottom:10px;"><span class="alert-icon">i</span><span>Com SELIC em <strong id="capm-rf-explain">14,75%</strong>, o <strong>Ke = <span id="capm-ke-explain">20,25%</span></strong> — retorno mínimo exigido para investir em ações. O Ibovespa em ~9x lucros representa desconto de 45% vs. EUA (21x).</span></div>
+      <table>
+        <tr><th>Parâmetro</th><th>Valor</th><th>Significado</th></tr>
+        <tr><td><span class="tip">Taxa livre de risco (Rf)<span class="tip-box"><div class="tip-title">Taxa Livre de Risco (Rf)</div><div class="tip-body">Retorno obtido sem risco — usamos a SELIC como proxy brasileira.</div><div class="tip-int">Base do custo de capital: toda ação deve render pelo menos Rf + prêmio.</div></span></span></td><td class="tr"><strong id="capm-rf">14,75%</strong></td><td>O que você ganha no CDI sem risco</td></tr>
+        <tr><td>Prêmio de risco equity (ERP)</td><td class="tr"><strong>5,50%</strong></td><td>Extra exigido para correr risco em ações</td></tr>
+        <tr><td><strong><span class="tip">Ke — Retorno mínimo exigido<span class="tip-box"><div class="tip-title">Ke (Cost of Equity)</div><div class="tip-body">Taxa de desconto usada em DCF e DDM. Representa o retorno mínimo que o investidor exige.</div><div class="tip-int">Ke = Rf + ERP. Quanto maior o Ke, menor o valor presente dos fluxos futuros.</div></span></span></strong></td><td class="tr pos"><strong id="capm-ke">20,25%</strong></td><td>Ação só vale se render mais que isso</td></tr>
+        <tr><td>Crescimento terminal (g)</td><td class="tr"><strong>6,00%</strong></td><td>Após horizonte de 5 anos</td></tr>
+        <tr><td><span class="tip">P/E justo implícito<span class="tip-box"><div class="tip-title">P/E Justo Implícito</div><div class="tip-body">P/E = 1/Ke. Com Ke de 20,25%, o P/L justo teórico é 4,9x.</div><div class="tip-int">Ibovespa em ~9x = desconto significativo vs. o custo de capital implícito.</div></span></span></td><td class="tr"><strong id="capm-pe">4,9x</strong></td><td>Ibovespa em ~9x = desconto histórico</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Cenário 2026 — Impacto nas Ações</div><span class="card-badge">Consenso</span></div>
+      <table>
+        <tr><th>Indicador</th><th>2025</th><th>2026E</th><th>Impacto</th></tr>
+        <tr><td>SELIC</td><td class="tr">13,75%</td><td class="tr"><strong>14,75%</strong></td><td class="tc"><span class="pill pill-sell">Pressiona múltiplos</span></td></tr>
+        <tr><td>IPCA</td><td class="tr">5,83%</td><td class="tr"><strong>5,30%</strong></td><td class="tc"><span class="pill pill-hold">Neutro</span></td></tr>
+        <tr><td>PIB Real</td><td class="tr">3,40%</td><td class="tr"><strong>2,20%</strong></td><td class="tc"><span class="pill pill-hold">Desaceleração</span></td></tr>
+        <tr><td>USD/BRL</td><td class="tr">5,70</td><td class="tr"><strong>5,85</strong></td><td class="tc"><span class="pill pill-sell">BRL fraco</span></td></tr>
+        <tr><td>Lucros IBOV</td><td class="tr">+12%</td><td class="tr"><strong>+8%</strong></td><td class="tc"><span class="pill pill-buy">Crescimento</span></td></tr>
+        <tr><td>P/E Ibovespa</td><td class="tr">9,5x</td><td class="tr"><strong>~9x</strong></td><td class="tc"><span class="pill pill-buy">Desconto histórico</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card mb">
+    <div class="card-hdr"><div class="card-title">Retorno Esperado por Classe de Ativo</div><span class="card-badge">Estimativas anualizadas</span></div>
+    <div id="macroChart" style="height:220px;"></div>
+  </div>
+
+  <div class="ig-grid">
+    <div class="ig-card ig"><div class="ic-title">Por que ações mesmo com SELIC alta?</div><div class="ic-body">O Ibovespa negocia a <strong>~9x lucros</strong>, desconto de 45% vs. EUA (21x) e 25% vs. histórico (12x). Empresas com <strong>ROE acima do Ke (20,25%)</strong> criam valor mesmo em ambiente de juro alto. Value investors com horizonte 2–3 anos têm janela histórica.</div></div>
+    <div class="ig-card"><div class="ic-title">Setores favorecidos com juro alto</div><div class="ic-body"><strong>Financeiro</strong> — spread bancário se expande. <strong>Petróleo</strong> — geração de caixa elevada, dividendos robustos. <strong>Energia elétrica</strong> — contratos regulados. Evitar: varejo alavancado, tech sem caixa.</div></div>
+    <div class="ig-card iy"><div class="ic-title">Quando o cenário muda?</div><div class="ic-body">Consenso aponta corte de SELIC no <strong>2S26</strong>. Cada queda de 1pp expande P/E justo em ~0,3x — potencial de +20–30% em múltiplos de qualidade. Aprovação do arcabouço fiscal seria catalisador adicional.</div></div>
+    <div class="ig-card ir"><div class="ic-title">Riscos principais</div><div class="ic-body"><strong>Fiscal:</strong> déficit acima do teto. <strong>Externo:</strong> Fed hawkish + recessão EUA. <strong>Câmbio:</strong> BRL fraco importa inflação. <strong>Político:</strong> eleições 2026 = incerteza regulatória.</div></div>
+  </div>
+</main>
+
+<!-- ══ TAB: INTERSECAO ═══════════════════════════════════════════ -->
+<main class="pg a" id="pg-intersecao">
+  <div class="pg-title">Oportunidades — Top Picks</div>
+  <div class="pg-desc">Score composto multi-modelo com ajuste de risco e convergência · Clique em qualquer ativo para análise completa · MC ≥ R$ 5 B</div>
+
+  <div class="layer-lbl"><span class="layer-tag">Nível 1</span>Resumo Executivo — Entenda em 5 segundos</div>
+  <div class="hero" id="heroPanel">
+    <div class="hero-hdr">
+      <div><div class="hero-title">Top 5 Oportunidades</div><div class="hero-sub">Score ajustado ao risco · Convergência de modelos · <span id="hero-univ">—</span> ações analisadas</div></div>
+      <div class="hero-meta" id="hero-meta">—</div>
+    </div>
+    <div class="top-grid" id="topPicksGrid"></div>
+  </div>
+
+  <!-- Portfolio -->
+  <div class="card mb" id="portfolioCard">
+    <div class="card-hdr"><div class="card-title">Sugestão de Carteira — Top 5 com Peso por Convicção</div><span class="card-badge bo">Beta ≈ 1,0</span></div>
+    <div id="portfolioGrid"></div>
+    <div style="font-size:10px;color:var(--ts);margin-top:10px;padding-top:8px;border-top:1px solid var(--gym)">Pesos proporcionais ao score de convicção. Não constitui recomendação de investimento. Diversifique por setor.</div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="krow">
+    <div class="kc kco"><div class="kc-lbl">Alta Convicção (≥65)</div><div class="kc-val vo" id="int-top">—</div><div class="kc-sub">Aprovadas por múltiplos modelos</div></div>
+    <div class="kc kcg"><div class="kc-lbl">Ret. Esp. Médio Top10</div><div class="kc-val vg" id="int-upside">—</div><div class="kc-sub">Ajustado ao risco</div></div>
+    <div class="kc kcy"><div class="kc-lbl">CDI — Benchmark</div><div class="kc-val" id="int-cdi">14,75%</div><div class="kc-sub">Retorno sem risco</div></div>
+    <div class="kc kcg"><div class="kc-lbl">≥3 Modelos Concordam</div><div class="kc-val vg" id="int-3mod">—</div><div class="kc-sub">Convergência multi-modelo</div></div>
+    <div class="kc kcy"><div class="kc-lbl">Universo Analisado</div><div class="kc-val" id="int-univ">—</div><div class="kc-sub">MC ≥ R$ 5B</div></div>
+  </div>
+
+  <div class="layer-lbl"><span class="layer-tag">Nível 2</span>Por que estas ações foram selecionadas</div>
+  <div class="ig-grid" id="insightsGrid"></div>
+
+  <!-- Score Explainers Top 3 -->
+  <div class="g3 mb" id="scoreExplainerGrid"></div>
+
+  <!-- Charts -->
+  <div class="g2 mb">
+    <div class="card"><div class="card-hdr"><div class="card-title">Preço Atual vs Valor Justo (Graham)</div><span class="card-badge bg">Top 10</span></div><div id="priceVsFairChart" style="height:220px;"></div></div>
+    <div class="card"><div class="card-hdr"><div class="card-title">Retorno Esperado vs Benchmarks</div><span class="card-badge">Ajustado ao risco</span></div><div id="intBenchChart" style="height:220px;"></div></div>
+  </div>
+  <div class="g2 mb">
+    <div class="card"><div class="card-hdr"><div class="card-title">Alocação por Setor — Top 15</div><span class="card-badge">Concentração</span></div><div id="sectorAllocChart" style="height:220px;"></div></div>
+    <div class="card"><div class="card-hdr"><div class="card-title">Top 5 — Score por Modelo</div><span class="card-badge">Radar</span></div><div id="intRadar" style="height:220px;"></div></div>
+  </div>
+
+  <div class="layer-lbl"><span class="layer-tag">Nível 3</span>Análise Profunda</div>
+  <div class="card mb">
+    <div class="card-hdr"><div class="card-title">Ranking Consolidado — Score Multi-Modelo</div><span class="card-badge bo" id="int-badge">—</span></div>
+    <div class="tw" id="intTableCompact"></div>
+    <button class="tbl-toggle" id="intTableToggle" onclick="toggleFullTable()"><span class="ti">▼</span> Ver análise completa</button>
+    <div class="tbl-full" id="intTableFull"><div class="tw"><div id="matrizTable"></div></div></div>
+  </div>
+</main>
+
+<!-- ══ TAB: MÚLTIPLOS ════════════════════════════════════════════ -->
+<main class="pg" id="pg-multiplos">
+  <div class="pg-title">Análise por Múltiplos</div>
+  <div class="pg-desc">Score 0–100 ajustado ao risco · P/L, P/VP, EV/EBIT, ROE, ROIC, DY, Margem Líquida · MC ≥ R$ 5 B</div>
+  <div class="meb">
+    <button class="meb-toggle" onclick="toggleMeb(this)"><span>O que é a Análise por Múltiplos?</span><span>▼</span></button>
+    <div class="meb-body">
+      <div class="meb-sec"><div class="meb-lbl">O que é</div><div class="meb-txt">Compara indicadores de preço e qualidade da empresa com benchmarks históricos. Responde: "essa ação está cara ou barata em relação ao que ela entrega?"</div></div>
+      <div class="meb-sec"><div class="meb-lbl">Como funciona</div><div class="meb-txt">Avalia 7 indicadores: P/L, P/VP, EV/EBIT, ROE, DY, ROIC e Margem Líquida. O score é ponderado e ajustado pelo Risk Score da empresa.</div></div>
+      <div class="meb-int">Score &gt; 65 → Barato + qualidade (COMPRA) · 45–65 → Neutro · &lt; 45 → Caro ou baixa qualidade (EVITAR)</div>
+      <div class="meb-lim" style="margin-top:8px;">Limitação: Avalia o presente, não o futuro. Empresas cíclicas flutuam muito — analise o ponto do ciclo.</div>
+    </div>
+  </div>
+  <div class="krow4">
+    <div class="kc kco"><div class="kc-lbl">Score ≥ 65 (Atrativo)</div><div class="kc-val vo" id="mul-buy">—</div><div class="kc-sub">Barato com qualidade</div></div>
+    <div class="kc kcg"><div class="kc-lbl"><span class="tip">ROE Mediana<span class="tip-box"><div class="tip-title">ROE (Return on Equity)</div><div class="tip-body">Rentabilidade sobre patrimônio. Mede quanto a empresa gera de lucro por real investido pelos acionistas.</div><div class="tip-int">ROE &gt; Ke (20,25%) = empresa criando valor. ROE &lt; Ke = destruindo valor.</div></span></span></div><div class="kc-val vg" id="mul-roemd">—</div><div class="kc-sub">Ke exigido: 20,25%</div></div>
+    <div class="kc kcy"><div class="kc-lbl"><span class="tip">P/L Mediana<span class="tip-box"><div class="tip-title">P/L (Preço/Lucro)</div><div class="tip-body">Quantos anos de lucro você paga pela ação. P/L = 10x significa que ao preço atual você pagaria 10 anos de lucro.</div><div class="tip-int">Ibovespa histórico: ~12x. Abaixo de 10x = desconto relevante.</div></span></span></div><div class="kc-val" id="mul-plmd">—</div><div class="kc-sub">Histórico: 12x</div></div>
+    <div class="kc kcy"><div class="kc-lbl">DY Mediana</div><div class="kc-val" id="mul-dymd">—</div><div class="kc-sub">CDI: 14,75%</div></div>
+  </div>
+  <div class="fbar">
+    <span style="font-size:10px;font-weight:700;color:var(--ts)">Setor:</span>
+    <button class="fbtn fa" id="fb-todos" onclick="filterMul('Todos',this)">Todos</button>
+    <button class="fbtn" onclick="filterMul('Financeiro',this)">Financeiro</button>
+    <button class="fbtn" onclick="filterMul('Energia',this)">Energia</button>
+    <button class="fbtn" onclick="filterMul('Petróleo',this)">Petróleo</button>
+    <button class="fbtn" onclick="filterMul('Mineração',this)">Mineração</button>
+    <button class="fbtn" onclick="filterMul('Construção',this)">Construção</button>
+    <button class="fbtn" onclick="filterMul('Agro/Alimentos',this)">Agro</button>
+    <button class="fbtn" onclick="filterMul('Saúde',this)">Saúde</button>
+    <button class="fbtn" onclick="filterMul('Industrial',this)">Industrial</button>
+    <input class="finp" id="mulSearch" placeholder="Buscar ticker..." oninput="renderMulTable()">
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Ranking por Múltiplos — Score Ajustado ao Risco</div><span class="card-badge bo" id="mul-badge">—</span><button class="info-btn" onclick="showMI('multiplos')">i</button></div>
+    <div class="tw"><div id="mulTable"></div></div>
+  </div>
+</main>
+
+<!-- ══ TAB: DCF ═══════════════════════════════════════════════════ -->
+<main class="pg" id="pg-dcf">
+  <div class="pg-title">DCF — Fluxo de Caixa Descontado</div>
+  <div class="pg-desc">Ke = 20,25% · g terminal = 6% · Horizonte 5 anos + Valor Terminal (Gordon) · LPA como proxy de FCF por ação</div>
+  <div class="meb">
+    <button class="meb-toggle" onclick="toggleMeb(this)"><span>O que é o DCF e como interpretar?</span><span>▼</span></button>
+    <div class="meb-body">
+      <div class="meb-sec"><div class="meb-lbl">O que é</div><div class="meb-txt">Calcula o preço justo somando todos os lucros futuros esperados, trazidos a valor presente pelo retorno mínimo exigido (Ke = 20,25%).</div></div>
+      <div class="meb-sec"><div class="meb-lbl">Como funciona</div><div class="meb-txt">Projeta LPA por 5 anos usando CAGR histórico, desconta pelo Ke e soma o valor terminal via Gordon (g=6%).</div></div>
+      <div class="meb-int">Upside &gt; 30% → Compra forte · 10–30% → Observar · 0–10% → Preço justo · &lt; 0% → Caro</div>
+      <div class="meb-lim" style="margin-top:8px;">Limitação: Muito sensível ao Ke. Variação de 1pp no Ke altera valor em até 20%. Use o heatmap de sensibilidade.</div>
+    </div>
+  </div>
+  <div class="alert alert-info"><span class="alert-icon">i</span><span>Ke = 20,25% (SELIC + ERP). g = 6%. Excluídos: LPA negativo ou CAGR indisponível. Use o heatmap para entender a margem de segurança nas premissas.</span></div>
+  <div class="krow4">
+    <div class="kc kco"><div class="kc-lbl">Elegíveis DCF</div><div class="kc-val vo" id="dcf-eleg">—</div><div class="kc-sub">LPA &gt; 0 e CAGR disponível</div></div>
+    <div class="kc kcg"><div class="kc-lbl">Com upside positivo</div><div class="kc-val vg" id="dcf-buy">—</div><div class="kc-sub">Preço &lt; Valor Intrínseco</div></div>
+    <div class="kc kcy"><div class="kc-lbl">Upside médio</div><div class="kc-val" id="dcf-upsmed">—</div><div class="kc-sub">Das ações com desconto</div></div>
+    <div class="kc kcr"><div class="kc-lbl">Sobrevalorizadas</div><div class="kc-val vr" id="dcf-over">—</div><div class="kc-sub">Preço &gt; Valor DCF</div></div>
+  </div>
+  <div class="g64">
+    <div class="card"><div class="card-hdr"><div class="card-title">Valor Intrínseco DCF vs Preço de Mercado</div><span class="card-badge bo" id="dcf-badge">—</span><button class="info-btn" onclick="showMI('dcf')">i</button></div><div class="tw"><div id="dcfTable"></div></div></div>
+    <div>
+      <div class="card mb"><div class="card-hdr"><div class="card-title">Sensibilidade — Ke × Crescimento Terminal</div><span class="card-badge">Heatmap</span></div><div id="dcfSens" style="height:255px;"></div><div style="font-size:10px;color:var(--ts);margin-top:6px;">Verde = vale mais que o caso base · Vermelho = vale menos. Use para entender a margem de segurança.</div></div>
+      <div class="card"><div class="card-hdr"><div class="card-title">Premissas</div></div><table><tr><th>Parâmetro</th><th>Valor</th></tr><tr><td>Ke (retorno exigido)</td><td class="tr pos"><strong>20,25%</strong></td></tr><tr><td>g terminal</td><td class="tr"><strong>6,00%</strong></td></tr><tr><td>Horizonte</td><td class="tr"><strong>5 anos</strong></td></tr><tr><td>Proxy FCF</td><td class="tr"><strong>LPA histórico</strong></td></tr></table></div>
+    </div>
+  </div>
+</main>
+
+<!-- ══ TAB: DDM/GORDON ════════════════════════════════════════════ -->
+<main class="pg" id="pg-gordon">
+  <div class="pg-title">DDM — Dividend Discount Model (Gordon Growth)</div>
+  <div class="pg-desc">P = D₁ ÷ (Ke – g) · Ke = 20,25% · g = ROE × (1 – Payout) · Ideal para empresas maduras pagadoras de dividendos</div>
+  <div class="meb">
+    <button class="meb-toggle" onclick="toggleMeb(this)"><span>O que é o DDM/Gordon e quando usar?</span><span>▼</span></button>
+    <div class="meb-body">
+      <div class="meb-sec"><div class="meb-lbl">O que é</div><div class="meb-txt">Calcula o preço justo pelos dividendos futuros. Quem paga mais dividendos de forma crescente, vale mais.</div></div>
+      <div class="meb-sec"><div class="meb-lbl">Como funciona</div><div class="meb-txt">P = D₁ ÷ (Ke − g). D₁ = próximo dividendo; Ke = 20,25%; g = ROE × (1 − Payout). Ex: ROE 15% × retenção 40% = g de 6%.</div></div>
+      <div class="meb-int">Upside &gt; 25% → BUY · 0–25% → Preço justo · &lt; 0% → Dividend yield já está no preço</div>
+      <div class="meb-lim" style="margin-top:8px;">Limitação: Apenas para empresas maduras pagadoras de dividendos. Exclui g ≥ Ke (diverge matematicamente).</div>
+    </div>
+  </div>
+  <div class="krow4">
+    <div class="kc kco"><div class="kc-lbl">Elegíveis DDM</div><div class="kc-val vo" id="gor-eleg">—</div><div class="kc-sub">DY &gt; 0 e g &lt; Ke</div></div>
+    <div class="kc kcg"><div class="kc-lbl">Com upside positivo</div><div class="kc-val vg" id="gor-buy">—</div><div class="kc-sub">Preço &lt; Valor Gordon</div></div>
+    <div class="kc kcy"><div class="kc-lbl">Ke utilizado</div><div class="kc-val">20,25%</div><div class="kc-sub">SELIC + ERP 5,50%</div></div>
+    <div class="kc kcr"><div class="kc-lbl">Sobrevalorizadas</div><div class="kc-val vr" id="gor-over">—</div><div class="kc-sub">Preço &gt; Valor DDM</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Gordon Growth Model — Valoração por Dividendos</div><span class="card-badge bo" id="gor-badge">—</span><button class="info-btn" onclick="showMI('gordon')">i</button></div>
+    <div class="tw"><div id="gordonTable"></div></div>
+  </div>
+</main>
+
+<!-- ══ TAB: GRAHAM ════════════════════════════════════════════════ -->
+<main class="pg" id="pg-graham">
+  <div class="pg-title">Graham — Preço Justo Conservador</div>
+  <div class="pg-desc">√(22,5 × LPA × VPA) · Margem de segurança mínima: 30% · Abordagem defensiva de Benjamin Graham</div>
+  <div class="meb">
+    <button class="meb-toggle" onclick="toggleMeb(this)"><span>O que é o modelo Graham e por que é conservador?</span><span>▼</span></button>
+    <div class="meb-body">
+      <div class="meb-sec"><div class="meb-lbl">O que é</div><div class="meb-txt">Fórmula do "pai do value investing" para comprar ações com grande desconto — criando uma "margem de segurança" contra erros e surpresas.</div></div>
+      <div class="meb-sec"><div class="meb-lbl">Como funciona</div><div class="meb-txt">Preço justo = √(22,5 × LPA × VPA). O 22,5 representa P/L máximo (15x) × P/VP máximo (1,5x). Graham exigia 30% de desconto antes de comprar.</div></div>
+      <div class="meb-int">Desconto ≥ 30% → Margem forte (BUY) · 10–30% → Margem fraca (OBSERVAR) · &lt; 0% → Acima do justo (EVITAR)</div>
+      <div class="meb-lim" style="margin-top:8px;">Limitação: Patrimonialista. Desfavorece tech e serviços com intangíveis. Bancos têm VPA distorcido — use com cautela.</div>
+    </div>
+  </div>
+  <div class="alert alert-warn"><span class="alert-icon">!</span><span>Graham exige LPA &gt; 0 e VPA &gt; 0. Use como complemento — não como critério único. Margem mínima: <strong>30%</strong>.</span></div>
+  <div class="krow4">
+    <div class="kc kco"><div class="kc-lbl">Elegíveis</div><div class="kc-val vo" id="g-eleg">—</div><div class="kc-sub">LPA &gt; 0 e VPA &gt; 0</div></div>
+    <div class="kc kcg"><div class="kc-lbl">Desconto ≥ 30%</div><div class="kc-val vg" id="g-buy">—</div><div class="kc-sub">Margem forte</div></div>
+    <div class="kc kcy"><div class="kc-lbl">Desconto médio</div><div class="kc-val" id="g-descmed">—</div><div class="kc-sub">Das ações com desconto</div></div>
+    <div class="kc kcr"><div class="kc-lbl">Acima do justo</div><div class="kc-val vr" id="g-over">—</div><div class="kc-sub">Sem margem de segurança</div></div>
+  </div>
+  <div class="g64">
+    <div class="card"><div class="card-hdr"><div class="card-title">Preço Justo vs Preço de Mercado</div><span class="card-badge bo" id="g-badge">—</span><button class="info-btn" onclick="showMI('graham')">i</button></div><div class="tw"><div id="grahamTable"></div></div></div>
+    <div>
+      <div class="card mb"><div class="card-hdr"><div class="card-title">Distribuição — Desconto / Prêmio</div></div><div id="grahamHist" style="height:195px;"></div></div>
+      <div class="card"><div class="card-hdr"><div class="card-title">Critérios Clássicos</div></div>
+        <table><tr><th>Critério</th><th>Limite</th><th>N</th></tr>
+        <tr><td>P/L ≤ 15x</td><td>Conservador</td><td class="tr" id="gc1">—</td></tr>
+        <tr><td>P/VP ≤ 1,5x</td><td>Patrimonial</td><td class="tr" id="gc2">—</td></tr>
+        <tr><td>P/L × P/VP ≤ 22,5</td><td>Combinado</td><td class="tr" id="gc3">—</td></tr>
+        <tr><td>DY ≥ 5%</td><td>Dividendos</td><td class="tr" id="gc4">—</td></tr>
+        <tr><td>LPA positivo</td><td>Lucrativa</td><td class="tr" id="gc5">—</td></tr>
+        <tr><td>Dívida/PL ≤ 1</td><td>Baixa alavancagem</td><td class="tr" id="gc6">—</td></tr>
+        <tr><td><strong>Todos</strong></td><td><strong>Graham puro</strong></td><td class="tr" id="gc7"><strong>—</strong></td></tr></table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ══ TAB: FAMA-FRENCH ══════════════════════════════════════════ -->
+<main class="pg" id="pg-fama">
+  <div class="pg-title">Fama-French — 5 Fatores de Retorno</div>
+  <div class="pg-desc">HML (Value 30%) · RMW (Qualidade 25%) · MOM (Momentum 20%) · SMB (Size 15%) · CMA (Conservador 10%)</div>
+  <div class="meb">
+    <button class="meb-toggle" onclick="toggleMeb(this)"><span>O que é Fama-French e como funciona?</span><span>▼</span></button>
+    <div class="meb-body">
+      <div class="meb-sec"><div class="meb-lbl">O que é</div><div class="meb-txt">Modelo acadêmico (Nobel de Economia). Identifica 5 características que historicamente levaram a retornos superiores no longo prazo.</div></div>
+      <div class="meb-sec"><div class="meb-lbl">Os 5 fatores</div><div class="meb-txt"><strong>HML:</strong> ações baratas superam. <strong>RMW:</strong> empresas lucrativas superam. <strong>SMB:</strong> menores têm prêmio. <strong>MOM:</strong> lucros crescendo continuam. <strong>CMA:</strong> conservadoras superam.</div></div>
+      <div class="meb-int">Score &gt; 65 → Alta exposição a fatores vencedores · 45–65 → Moderado · &lt; 45 → Baixa exposição</div>
+      <div class="meb-lim" style="margin-top:8px;">Limitação: Padrões históricos podem demorar anos para se materializar. Tese estrutural de longo prazo (3–5 anos).</div>
+    </div>
+  </div>
+  <div class="krow">
+    <div class="kc kco"><div class="kc-lbl"><span class="tip">HML — Valor<span class="tip-box"><div class="tip-title">HML — High Minus Low</div><div class="tip-body">Fator de value: ações com baixo P/VP (baratas vs. patrimônio) tendem a superar no longo prazo.</div><div class="tip-int">P/VP &lt; 1x = máxima exposição ao fator HML.</div></span></span></div><div class="kc-val vo" id="ff-hml">—</div><div class="kc-sub">P/VP baixo (score &gt;60)</div></div>
+    <div class="kc kcg"><div class="kc-lbl"><span class="tip">RMW — Qualidade<span class="tip-box"><div class="tip-title">RMW — Robust Minus Weak</div><div class="tip-body">Fator de lucratividade: empresas com ROE e margens elevadas superam empresas com baixa rentabilidade.</div><div class="tip-int">ROE &gt; 20% = alta exposição ao fator RMW.</div></span></span></div><div class="kc-val vg" id="ff-rmw">—</div><div class="kc-sub">ROE + Margem elevados</div></div>
+    <div class="kc kcy"><div class="kc-lbl">SMB — Tamanho</div><div class="kc-val" id="ff-smb">—</div><div class="kc-sub">Prêmio de small/mid cap</div></div>
+    <div class="kc kcy"><div class="kc-lbl">MOM — Momentum</div><div class="kc-val" id="ff-mom">—</div><div class="kc-sub">CAGR lucros &gt; 60</div></div>
+    <div class="kc kcg"><div class="kc-lbl">Score Forte (≥65)</div><div class="kc-val vg" id="ff-strong">—</div><div class="kc-sub">Multi-fator positivo</div></div>
+  </div>
+  <div class="g64">
+    <div class="card"><div class="card-hdr"><div class="card-title">Score Fama-French 5 Fatores</div><span class="card-badge bo" id="ff-badge">—</span><button class="info-btn" onclick="showMI('fama')">i</button></div><div class="tw"><div id="famaTable"></div></div></div>
+    <div>
+      <div class="card mb"><div class="card-hdr"><div class="card-title">Exposição Média — TOP 10</div></div><div id="ffRadar" style="height:235px;"></div></div>
+      <div class="card"><div class="card-hdr"><div class="card-title">Pesos dos Fatores</div></div>
+        <table><tr><th>Fator</th><th>Peso</th><th>Proxy</th></tr>
+        <tr><td>HML — Valor</td><td class="tr"><strong>30%</strong></td><td>P/VP invertido</td></tr>
+        <tr><td>RMW — Qualidade</td><td class="tr"><strong>25%</strong></td><td>ROE + Margem + ROIC</td></tr>
+        <tr><td>MOM — Momentum</td><td class="tr"><strong>20%</strong></td><td>CAGR lucros 5A</td></tr>
+        <tr><td>SMB — Tamanho</td><td class="tr"><strong>15%</strong></td><td>Log(MC) invertido</td></tr>
+        <tr><td>CMA — Conservador</td><td class="tr"><strong>10%</strong></td><td>DY + baixa dívida</td></tr></table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ══ TAB: SETORIAL ══════════════════════════════════════════════ -->
+<main class="pg" id="pg-setorial">
+  <div class="pg-title">Análise Setorial</div>
+  <div class="pg-desc">Medianas de múltiplos e qualidade por setor · Oportunidades relativas · MC ≥ R$ 5 B</div>
+  <div class="krow">
+    <div class="kc kco"><div class="kc-lbl">Universo filtrado</div><div class="kc-val vo" id="s-univ">—</div><div class="kc-sub">MC ≥ R$ 5B</div></div>
+    <div class="kc kcg"><div class="kc-lbl">LPA positivo</div><div class="kc-val vg" id="s-lpa">—</div><div class="kc-sub">Empresas lucrativas</div></div>
+    <div class="kc kcy"><div class="kc-lbl">P/L mediana</div><div class="kc-val" id="s-plmed">—</div><div class="kc-sub">Histórico: 12x</div></div>
+    <div class="kc kcg"><div class="kc-lbl">ROE mediana</div><div class="kc-val vg" id="s-roemd">—</div><div class="kc-sub">Ke exigido: 20,25%</div></div>
+    <div class="kc kcy"><div class="kc-lbl">DY mediana</div><div class="kc-val" id="s-dymd">—</div><div class="kc-sub">CDI: 14,75%</div></div>
+  </div>
+  <div class="card mb"><div class="card-hdr"><div class="card-title">Análise por Setor — Medianas</div><span class="card-badge bo" id="s-badge">—</span></div><div class="tw"><div id="sectorTable"></div></div></div>
+  <div class="g2">
+    <div class="card"><div class="card-hdr"><div class="card-title">ROE Mediano — Quanto cada setor rende?</div></div><div id="sRoeChart" style="height:290px;"></div></div>
+    <div class="card"><div class="card-hdr"><div class="card-title">P/L Mediano — Qual setor está mais barato?</div></div><div id="sPLChart" style="height:290px;"></div></div>
+  </div>
+</main>
+
+<footer class="ft">
+  Quant Fundamentals · Base: StatusInvest · Macro: BCB/SGS Live · Preços: BRAPI · Modelos: Graham · DDM/Gordon · DCF · Múltiplos · Fama-French 5F · Ke = 20,25% · MC ≥ R$ 5B · Abril 2026 ·
+  <strong>Não constitui recomendação de investimento.</strong>
+</footer>
+
+<script>
+/* ================================================================
+   QUANT FUNDAMENTALS — BRAINVEST EDITION
+   Design: Laranja #E8681A · Verde #3A4A1E · Bege #EDE8DF
+   Features: BRAPI live prices · BCB/SGS macro · Tooltips · Charts
+   ================================================================ */
+
+// ── 1. DATA ──────────────────────────────────────────────────────
+const D=[{"t":"ABCB4","p":25.4,"dy":10.31,"pl":6.2,"pvp":0.92,"mb":19.54,"me":14.15,"ml":11.82,"pe":5.18,"ev":5.18,"de":null,"dp":null,"ps":0.73,"lc":0.24,"roe":14.82,"roa":1.57,"roi":null,"pa":0.11,"ga":0.13,"cr":28.96,"cl":24.08,"lq":13354037.68,"vpa":27.63,"lpa":4.1,"peg":1.96,"mc":6214284167.8},{"t":"ABEV3","p":15.25,"dy":6.47,"pl":15.51,"pvp":2.71,"mb":51.42,"me":26.54,"ml":17.57,"pe":10.26,"ev":9.54,"de":-0.72,"dp":-0.19,"ps":2.72,"lc":0.96,"roe":17.46,"roa":10.69,"roi":21.37,"pa":0.61,"ga":0.61,"cr":8.61,"cl":6.38,"lq":310443221.32,"vpa":5.63,"lpa":0.98,"peg":2.1,"mc":240395889557.25},{"t":"AESB3","p":8.12,"dy":null,"pl":-15.99,"pvp":1.45,"mb":28.03,"me":22.77,"ml":-11.7,"pe":8.22,"ev":19.07,"de":10.85,"dp":1.92,"ps":1.87,"lc":0.97,"roe":-9.07,"roa":-2.39,"roi":4.38,"pa":0.26,"ga":0.2,"cr":null,"cl":null,"lq":13684494.0,"vpa":5.6,"lpa":-0.51,"peg":-1.15,"mc":7663439293.44},{"t":"AGRO3","p":27.76,"dy":8.32,"pl":11.47,"pvp":0.89,"mb":59.77,"me":27.95,"ml":15.81,"pe":8.46,"ev":9.08,"de":2.32,"dp":0.27,"ps":1.81,"lc":1.7,"roe":7.76,"roa":3.73,"roi":8.27,"pa":0.48,"ga":0.24,"cr":4.47,"cl":-7.3,"lq":9264793.7,"vpa":31.13,"lpa":2.42,"peg":-0.44,"mc":5780578408.86},{"t":"ALLD3","p":6.81,"dy":17.01,"pl":1.96,"pvp":0.42,"mb":11.45,"me":9.15,"ml":6.04,"pe":1.3,"ev":1.38,"de":0.08,"dp":0.07,"ps":0.12,"lc":1.8,"roe":21.44,"roa":9.87,"roi":17.95,"pa":0.46,"ga":1.63,"cr":3.11,"cl":14.69,"lq":2718173.18,"vpa":16.19,"lpa":3.47,"peg":0.02,"mc":652673730.09},{"t":"ALOS3","p":30.34,"dy":7.18,"pl":18.34,"pvp":1.1,"mb":73.88,"me":53.84,"ml":29.18,"pe":9.94,"ev":8.36,"de":-1.58,"dp":-0.5,"ps":5.35,"lc":2.58,"roe":6.0,"roa":3.21,"roi":10.46,"pa":0.54,"ga":0.11,"cr":29.09,"cl":37.61,"lq":164939307.68,"vpa":27.57,"lpa":1.65,"peg":0.94,"mc":15297153331.98},{"t":"ALPA4","p":12.4,"dy":4.36,"pl":14.89,"pvp":2.55,"mb":52.17,"me":13.03,"ml":12.46,"pe":14.24,"ev":14.97,"de":1.14,"dp":1.47,"ps":1.86,"lc":1.61,"roe":17.11,"roa":9.33,"roi":12.62,"pa":0.55,"ga":0.75,"cr":6.29,"cl":32.33,"lq":26827412.36,"vpa":4.87,"lpa":0.83,"peg":0.03,"mc":8225523856.72},{"t":"ALUP11","p":36.66,"dy":6.75,"pl":10.73,"pvp":1.32,"mb":85.41,"me":74.63,"ml":26.23,"pe":5.9,"ev":9.21,"de":4.53,"dp":1.73,"ps":2.82,"lc":2.93,"roe":12.32,"roa":3.33,"roi":8.54,"pa":0.27,"ga":0.13,"cr":14.96,"cl":18.53,"lq":28218665.64,"vpa":27.76,"lpa":3.42,"peg":0.01,"mc":13483989997.68},{"t":"AMER3","p":0.71,"dy":null,"pl":null,"pvp":-0.03,"mb":23.08,"me":-15.22,"ml":-25.97,"pe":null,"ev":null,"de":null,"dp":null,"ps":0.02,"lc":0.38,"roe":null,"roa":null,"roi":null,"pa":null,"ga":1.16,"cr":-7.18,"cl":null,"lq":40085697.41,"vpa":-24.07,"lpa":null,"peg":null,"mc":540892699.63},{"t":"ANIM3","p":5.95,"dy":null,"pl":null,"pvp":0.76,"mb":49.44,"me":8.96,"ml":-3.66,"pe":14.87,"ev":25.67,"de":6.19,"dp":0.65,"ps":0.51,"lc":1.14,"roe":-3.43,"roa":-0.73,"roi":3.25,"pa":0.21,"ga":0.2,"cr":38.64,"cl":null,"lq":6248225.64,"vpa":7.82,"lpa":-0.27,"peg":null,"mc":3196699484.53},{"t":"ARML3","p":30.85,"dy":6.72,"pl":12.07,"pvp":1.69,"mb":63.91,"me":36.08,"ml":15.41,"pe":8.49,"ev":11.78,"de":3.01,"dp":1.33,"ps":1.86,"lc":1.61,"roe":14.0,"roa":3.68,"roi":8.86,"pa":0.26,"ga":0.12,"cr":null,"cl":null,"lq":14087395.44,"vpa":18.26,"lpa":2.56,"peg":null,"mc":7823561636.53},{"t":"ASAI3","p":6.47,"dy":null,"pl":null,"pvp":null,"mb":16.43,"me":4.99,"ml":-0.09,"pe":7.69,"ev":10.64,"de":4.98,"dp":null,"ps":0.04,"lc":0.71,"roe":null,"roa":null,"roi":3.24,"pa":null,"ga":4.0,"cr":45.75,"cl":null,"lq":96862019.43,"vpa":null,"lpa":null,"peg":null,"mc":11041956097.37},{"t":"AURE3","p":11.42,"dy":6.44,"pl":12.1,"pvp":1.29,"mb":75.62,"me":67.56,"ml":31.36,"pe":5.21,"ev":9.25,"de":3.3,"dp":1.22,"ps":3.8,"lc":1.57,"roe":10.66,"roa":3.18,"roi":8.59,"pa":0.3,"ga":0.12,"cr":56.73,"cl":null,"lq":26748126.25,"vpa":8.86,"lpa":0.94,"peg":null,"mc":11254479996.04},{"t":"AZZA3","p":34.54,"dy":4.56,"pl":11.3,"pvp":1.84,"mb":48.33,"me":7.63,"ml":5.76,"pe":16.23,"ev":18.69,"de":4.34,"dp":1.65,"ps":0.65,"lc":1.45,"roe":16.32,"roa":3.29,"roi":5.72,"pa":0.2,"ga":0.57,"cr":9.25,"cl":null,"lq":99870714.32,"vpa":18.77,"lpa":3.06,"peg":null,"mc":21218432700.56},{"t":"B3SA3","p":11.74,"dy":5.42,"pl":20.6,"pvp":2.35,"mb":90.06,"me":57.71,"ml":43.0,"pe":14.7,"ev":16.64,"de":1.04,"dp":0.43,"ps":8.86,"lc":1.55,"roe":11.41,"roa":6.76,"roi":13.36,"pa":0.59,"ga":0.16,"cr":6.48,"cl":5.36,"lq":405474975.38,"vpa":4.99,"lpa":0.57,"peg":0.05,"mc":62636978498.61},{"t":"BBAS3","p":24.24,"dy":10.07,"pl":5.22,"pvp":0.82,"mb":32.73,"me":25.73,"ml":22.43,"pe":3.99,"ev":3.99,"de":null,"dp":null,"ps":1.17,"lc":null,"roe":15.82,"roa":1.63,"roi":null,"pa":0.1,"ga":0.07,"cr":15.63,"cl":11.11,"lq":1026555697.23,"vpa":29.54,"lpa":4.64,"peg":0.49,"mc":135993264823.56},{"t":"BBDC3","p":12.06,"dy":5.74,"pl":7.87,"pvp":0.76,"mb":null,"me":null,"ml":27.23,"pe":null,"ev":null,"de":null,"dp":null,"ps":1.56,"lc":null,"roe":9.74,"roa":0.94,"roi":null,"pa":0.1,"ga":0.04,"cr":5.06,"cl":15.85,"lq":62831521.02,"vpa":15.82,"lpa":1.53,"peg":0.06,"mc":118406855736.94},{"t":"BBDC4","p":12.5,"dy":6.08,"pl":8.15,"pvp":0.79,"mb":null,"me":null,"ml":27.23,"pe":null,"ev":null,"de":null,"dp":null,"ps":1.62,"lc":null,"roe":9.74,"roa":0.94,"roi":null,"pa":0.1,"ga":0.04,"cr":5.06,"cl":15.85,"lq":555614393.43,"vpa":15.82,"lpa":1.53,"peg":0.07,"mc":118406855736.94},{"t":"BBSE3","p":44.88,"dy":4.81,"pl":14.87,"pvp":5.09,"mb":null,"me":28.03,"ml":26.13,"pe":14.41,"ev":14.34,"de":null,"dp":null,"ps":3.89,"lc":null,"roe":34.24,"roa":null,"roi":null,"pa":null,"ga":null,"cr":15.93,"cl":14.18,"lq":74620571.97,"vpa":8.82,"lpa":3.02,"peg":0.03,"mc":30060000000.0},{"t":"BEEF3","p":7.02,"dy":5.55,"pl":4.78,"pvp":0.77,"mb":8.26,"me":3.55,"ml":3.12,"pe":5.46,"ev":7.29,"de":2.34,"dp":0.36,"ps":0.15,"lc":1.45,"roe":16.07,"roa":3.12,"roi":7.52,"pa":0.19,"ga":1.0,"cr":9.22,"cl":null,"lq":17124396.24,"vpa":9.09,"lpa":1.47,"peg":null,"mc":5279898993.22},{"t":"BHIA3","p":2.69,"dy":null,"pl":null,"pvp":-0.44,"mb":30.0,"me":-2.91,"ml":-7.73,"pe":null,"ev":null,"de":null,"dp":null,"ps":0.09,"lc":0.79,"roe":null,"roa":null,"roi":null,"pa":null,"ga":1.15,"cr":15.86,"cl":null,"lq":32779116.39,"vpa":-6.14,"lpa":null,"peg":null,"mc":7083748682.24},{"t":"BLAU3","p":13.26,"dy":null,"pl":null,"pvp":1.36,"mb":60.5,"me":7.6,"ml":2.7,"pe":35.12,"ev":27.67,"de":2.41,"dp":0.42,"ps":1.53,"lc":3.86,"roe":2.29,"roa":1.1,"roi":2.67,"pa":0.48,"ga":0.4,"cr":10.73,"cl":null,"lq":6097834.5,"vpa":9.77,"lpa":null,"peg":null,"mc":1840700000.0},{"t":"BMEB4","p":26.36,"dy":6.07,"pl":7.72,"pvp":0.9,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":11.61,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":2266804.22,"vpa":29.19,"lpa":3.41,"peg":null,"mc":1280000000.0},{"t":"BMGB4","p":3.57,"dy":4.48,"pl":6.12,"pvp":0.52,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":8.39,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":6116413.79,"vpa":6.9,"lpa":0.58,"peg":null,"mc":2380000000.0},{"t":"BPAC11","p":31.69,"dy":4.57,"pl":12.55,"pvp":1.61,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":12.82,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":189832499.44,"vpa":19.71,"lpa":2.53,"peg":null,"mc":38000000000.0},{"t":"BPAN4","p":4.28,"dy":4.67,"pl":5.95,"pvp":0.73,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":12.29,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":8490090.9,"vpa":5.86,"lpa":0.72,"peg":null,"mc":5500000000.0},{"t":"BRAP4","p":24.73,"dy":6.09,"pl":8.43,"pvp":0.94,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":11.12,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":20530083.71,"vpa":26.46,"lpa":2.93,"peg":null,"mc":11700000000.0},{"t":"BRAV3","p":18.51,"dy":null,"pl":null,"pvp":0.55,"mb":null,"me":null,"ml":-3.06,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":null,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":47684012.83,"vpa":33.86,"lpa":null,"peg":null,"mc":14400000000.0},{"t":"BRBI11","p":15.44,"dy":10.11,"pl":8.83,"pvp":1.12,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":12.73,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":7143694.74,"vpa":13.76,"lpa":1.75,"peg":null,"mc":2800000000.0},{"t":"BRFS3","p":18.73,"dy":4.28,"pl":9.23,"pvp":2.98,"mb":16.36,"me":7.57,"ml":7.34,"pe":8.02,"ev":9.69,"de":2.07,"dp":1.52,"ps":0.68,"lc":1.55,"roe":32.28,"roa":7.69,"roi":17.5,"pa":0.24,"ga":1.05,"cr":13.82,"cl":null,"lq":209975428.63,"vpa":6.28,"lpa":2.03,"peg":null,"mc":42500000000.0},{"t":"BRKM5","p":10.03,"dy":null,"pl":null,"pvp":0.73,"mb":5.68,"me":-4.52,"ml":-10.88,"pe":null,"ev":null,"de":null,"dp":null,"ps":0.17,"lc":1.14,"roe":null,"roa":null,"roi":null,"pa":null,"ga":0.63,"cr":-0.01,"cl":null,"lq":37673001.44,"vpa":13.67,"lpa":null,"peg":null,"mc":12800000000.0},{"t":"BRSR6","p":11.92,"dy":5.28,"pl":6.74,"pvp":0.74,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":11.01,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":14012018.1,"vpa":16.15,"lpa":1.77,"peg":null,"mc":8800000000.0},{"t":"CAML3","p":12.51,"dy":5.91,"pl":9.44,"pvp":1.11,"mb":27.46,"me":11.4,"ml":8.83,"pe":8.09,"ev":10.2,"de":2.94,"dp":0.42,"ps":0.83,"lc":1.31,"roe":11.77,"roa":4.14,"roi":8.23,"pa":0.35,"ga":0.47,"cr":11.04,"cl":14.06,"lq":7449948.56,"vpa":11.24,"lpa":1.32,"peg":0.07,"mc":3056764327.76},{"t":"CMIN3","p":3.04,"dy":4.94,"pl":9.72,"pvp":0.95,"mb":35.35,"me":26.95,"ml":20.49,"pe":4.97,"ev":4.75,"de":-0.2,"dp":-0.06,"ps":1.99,"lc":1.5,"roe":9.78,"roa":7.17,"roi":14.81,"pa":0.73,"ga":0.35,"cr":null,"cl":null,"lq":92427574.77,"vpa":3.2,"lpa":0.31,"peg":null,"mc":26700000000.0},{"t":"CMIG4","p":12.1,"dy":10.0,"pl":8.73,"pvp":1.24,"mb":null,"me":41.47,"ml":26.69,"pe":5.7,"ev":7.9,"de":1.77,"dp":0.86,"ps":2.33,"lc":1.73,"roe":14.26,"roa":4.04,"roi":9.13,"pa":0.28,"ga":0.15,"cr":7.2,"cl":14.24,"lq":213834741.0,"vpa":9.73,"lpa":1.39,"peg":0.04,"mc":27600000000.0},{"t":"COGN3","p":2.59,"dy":null,"pl":null,"pvp":0.82,"mb":null,"me":15.44,"ml":-22.55,"pe":9.38,"ev":30.84,"de":6.37,"dp":1.98,"ps":0.62,"lc":1.26,"roe":-15.96,"roa":-3.09,"roi":1.55,"pa":0.19,"ga":0.14,"cr":-3.14,"cl":null,"lq":32285021.5,"vpa":3.16,"lpa":null,"peg":null,"mc":6800000000.0},{"t":"CPFE3","p":28.82,"dy":6.27,"pl":9.27,"pvp":1.32,"mb":null,"me":44.78,"ml":24.69,"pe":5.4,"ev":8.69,"de":2.99,"dp":1.49,"ps":2.29,"lc":1.06,"roe":14.25,"roa":4.18,"roi":9.14,"pa":0.29,"ga":0.17,"cr":11.59,"cl":12.0,"lq":53516729.37,"vpa":21.82,"lpa":3.11,"peg":0.01,"mc":30700000000.0},{"t":"CPLE6","p":10.74,"dy":7.18,"pl":7.7,"pvp":1.04,"mb":null,"me":29.89,"ml":16.56,"pe":5.81,"ev":9.09,"de":2.87,"dp":1.72,"ps":1.28,"lc":0.85,"roe":13.54,"roa":3.49,"roi":6.61,"pa":0.26,"ga":0.21,"cr":9.51,"cl":11.06,"lq":135726419.5,"vpa":10.35,"lpa":1.39,"peg":0.01,"mc":25100000000.0},{"t":"CRFB3","p":14.01,"dy":3.69,"pl":9.35,"pvp":0.95,"mb":21.52,"me":4.74,"ml":3.0,"pe":7.03,"ev":8.53,"de":1.08,"dp":0.5,"ps":0.28,"lc":0.89,"roe":10.17,"roa":3.55,"roi":10.18,"pa":0.35,"ga":1.18,"cr":12.28,"cl":null,"lq":40803753.05,"vpa":14.7,"lpa":1.5,"peg":null,"mc":12900000000.0},{"t":"CSAN3","p":14.05,"dy":3.56,"pl":8.3,"pvp":0.58,"mb":null,"me":16.89,"ml":6.08,"pe":4.77,"ev":9.1,"de":3.31,"dp":0.67,"ps":0.5,"lc":1.27,"roe":6.96,"roa":1.58,"roi":7.5,"pa":0.23,"ga":0.26,"cr":17.23,"cl":null,"lq":45718534.37,"vpa":24.2,"lpa":1.69,"peg":null,"mc":23600000000.0},{"t":"CSMG3","p":18.6,"dy":9.31,"pl":8.63,"pvp":1.09,"mb":null,"me":34.29,"ml":20.08,"pe":5.48,"ev":8.76,"de":2.82,"dp":1.56,"ps":1.73,"lc":0.82,"roe":12.65,"roa":3.53,"roi":6.85,"pa":0.28,"ga":0.18,"cr":15.35,"cl":22.54,"lq":34618459.37,"vpa":17.05,"lpa":2.16,"peg":0.01,"mc":10400000000.0},{"t":"CSNA3","p":8.84,"dy":1.53,"pl":14.71,"pvp":0.5,"mb":24.85,"me":10.14,"ml":7.49,"pe":14.86,"ev":10.35,"de":1.57,"dp":0.29,"ps":1.1,"lc":0.85,"roe":3.4,"roa":2.27,"roi":5.5,"pa":0.67,"ga":0.3,"cr":-3.16,"cl":-36.5,"lq":100543773.19,"vpa":17.72,"lpa":0.6,"peg":-0.05,"mc":38000000000.0},{"t":"CURY3","p":17.35,"dy":9.36,"pl":8.16,"pvp":2.09,"mb":34.86,"me":26.24,"ml":21.54,"pe":6.0,"ev":5.79,"de":-1.56,"dp":-0.77,"ps":1.76,"lc":3.5,"roe":25.63,"roa":9.31,"roi":23.72,"pa":0.36,"ga":0.43,"cr":33.05,"cl":35.48,"lq":34183026.09,"vpa":8.29,"lpa":2.12,"peg":0.02,"mc":4200000000.0},{"t":"CVCB3","p":2.26,"dy":null,"pl":null,"pvp":0.88,"mb":100.0,"me":-6.56,"ml":-20.73,"pe":null,"ev":null,"de":null,"dp":null,"ps":0.36,"lc":0.94,"roe":null,"roa":null,"roi":null,"pa":null,"ga":0.06,"cr":-1.64,"cl":null,"lq":16244680.29,"vpa":2.56,"lpa":null,"peg":null,"mc":3200000000.0},{"t":"CXSE3","p":14.53,"dy":5.51,"pl":10.23,"pvp":2.55,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":24.94,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":28649949.59,"vpa":5.7,"lpa":1.42,"peg":null,"mc":15400000000.0},{"t":"CYRE3","p":17.54,"dy":10.74,"pl":7.55,"pvp":1.23,"mb":37.18,"me":25.82,"ml":20.99,"pe":4.93,"ev":4.76,"de":-1.54,"dp":-0.65,"ps":1.33,"lc":2.14,"roe":16.31,"roa":5.8,"roi":20.2,"pa":0.36,"ga":0.28,"cr":26.4,"cl":60.86,"lq":152461278.25,"vpa":14.24,"lpa":2.32,"peg":0.01,"mc":11000000000.0},{"t":"DASA3","p":4.14,"dy":null,"pl":null,"pvp":0.53,"mb":30.41,"me":6.08,"ml":-4.78,"pe":27.71,"ev":24.71,"de":6.67,"dp":1.97,"ps":0.25,"lc":0.84,"roe":-5.79,"roa":-0.87,"roi":1.06,"pa":0.15,"ga":0.18,"cr":20.25,"cl":null,"lq":12001462.85,"vpa":7.85,"lpa":null,"peg":null,"mc":8100000000.0},{"t":"DIRR3","p":22.07,"dy":9.46,"pl":7.78,"pvp":1.53,"mb":34.15,"me":24.45,"ml":17.23,"pe":5.11,"ev":5.14,"de":-0.99,"dp":-0.59,"ps":1.34,"lc":3.5,"roe":19.69,"roa":8.73,"roi":21.96,"pa":0.44,"ga":0.51,"cr":21.82,"cl":39.24,"lq":14014820.2,"vpa":14.44,"lpa":2.84,"peg":0.02,"mc":3000000000.0},{"t":"DXCO3","p":6.34,"dy":3.64,"pl":11.64,"pvp":0.79,"mb":36.59,"me":20.24,"ml":8.6,"pe":8.39,"ev":10.73,"de":2.93,"dp":0.71,"ps":0.92,"lc":3.42,"roe":6.78,"roa":3.26,"roi":6.13,"pa":0.48,"ga":0.38,"cr":6.73,"cl":null,"lq":10085898.76,"vpa":8.01,"lpa":0.54,"peg":null,"mc":8100000000.0},{"t":"ECOR3","p":7.97,"dy":3.02,"pl":9.47,"pvp":0.91,"mb":null,"me":15.46,"ml":3.87,"pe":6.2,"ev":7.5,"de":2.15,"dp":0.67,"ps":0.37,"lc":1.3,"roe":9.59,"roa":2.34,"roi":7.01,"pa":0.24,"ga":0.6,"cr":10.04,"cl":null,"lq":6447007.89,"vpa":8.77,"lpa":0.84,"peg":null,"mc":8200000000.0},{"t":"EGIE3","p":47.6,"dy":5.04,"pl":10.05,"pvp":2.07,"mb":null,"me":54.96,"ml":38.55,"pe":6.74,"ev":9.06,"de":2.65,"dp":1.67,"ps":3.88,"lc":0.93,"roe":20.61,"roa":6.56,"roi":11.88,"pa":0.32,"ga":0.17,"cr":11.37,"cl":14.08,"lq":49534001.86,"vpa":22.98,"lpa":4.74,"peg":0.02,"mc":29900000000.0},{"t":"ENAT3","p":14.98,"dy":11.43,"pl":8.74,"pvp":1.17,"mb":null,"me":59.0,"ml":32.66,"pe":5.74,"ev":10.5,"de":4.32,"dp":2.16,"ps":2.85,"lc":1.7,"roe":13.36,"roa":3.46,"roi":7.09,"pa":0.26,"ga":0.09,"cr":null,"cl":null,"lq":26403685.91,"vpa":12.81,"lpa":1.71,"peg":null,"mc":7700000000.0},{"t":"ENEV3","p":12.55,"dy":3.18,"pl":12.36,"pvp":1.69,"mb":null,"me":44.23,"ml":22.5,"pe":8.42,"ev":14.09,"de":5.37,"dp":2.03,"ps":2.79,"lc":2.8,"roe":13.67,"roa":3.35,"roi":6.12,"pa":0.25,"ga":0.15,"cr":39.71,"cl":50.0,"lq":94175447.24,"vpa":7.42,"lpa":1.02,"peg":0.01,"mc":29800000000.0},{"t":"ENGI11","p":39.49,"dy":9.57,"pl":9.78,"pvp":1.78,"mb":null,"me":42.49,"ml":20.92,"pe":5.96,"ev":8.44,"de":3.2,"dp":2.24,"ps":2.04,"lc":0.95,"roe":18.22,"roa":3.8,"roi":8.41,"pa":0.21,"ga":0.18,"cr":14.53,"cl":20.56,"lq":197714614.88,"vpa":22.16,"lpa":4.04,"peg":0.04,"mc":44200000000.0},{"t":"EQTL3","p":31.39,"dy":3.58,"pl":14.62,"pvp":1.8,"mb":null,"me":30.96,"ml":15.04,"pe":9.3,"ev":11.75,"de":3.27,"dp":2.14,"ps":2.2,"lc":1.22,"roe":12.32,"roa":3.11,"roi":6.15,"pa":0.25,"ga":0.21,"cr":16.97,"cl":27.48,"lq":199399266.83,"vpa":17.44,"lpa":2.15,"peg":0.06,"mc":53200000000.0},{"t":"EVEN3","p":9.5,"dy":8.84,"pl":6.35,"pvp":0.94,"mb":32.95,"me":20.62,"ml":16.31,"pe":4.51,"ev":4.67,"de":-0.4,"dp":-0.17,"ps":1.01,"lc":5.94,"roe":14.88,"roa":5.48,"roi":15.49,"pa":0.37,"ga":0.34,"cr":14.22,"cl":null,"lq":10002498.28,"vpa":10.12,"lpa":1.5,"peg":null,"mc":2500000000.0},{"t":"EZTC3","p":16.17,"dy":9.12,"pl":9.44,"pvp":0.84,"mb":32.27,"me":24.52,"ml":25.27,"pe":6.57,"ev":5.6,"de":-1.52,"dp":-0.63,"ps":2.37,"lc":11.35,"roe":8.9,"roa":6.05,"roi":10.86,"pa":0.68,"ga":0.24,"cr":10.77,"cl":7.76,"lq":17432083.5,"vpa":19.19,"lpa":1.71,"peg":0.12,"mc":3100000000.0},{"t":"FESA4","p":37.17,"dy":6.28,"pl":7.91,"pvp":0.75,"mb":28.93,"me":23.94,"ml":19.4,"pe":5.14,"ev":2.95,"de":-1.73,"dp":-0.52,"ps":1.53,"lc":7.85,"roe":9.44,"roa":6.7,"roi":12.52,"pa":0.71,"ga":0.35,"cr":11.53,"cl":5.27,"lq":6484178.41,"vpa":49.72,"lpa":4.7,"peg":0.05,"mc":8200000000.0},{"t":"FLRY3","p":14.38,"dy":4.51,"pl":14.17,"pvp":2.55,"mb":33.73,"me":15.93,"ml":9.64,"pe":12.37,"ev":14.09,"de":2.05,"dp":1.47,"ps":1.36,"lc":1.27,"roe":18.02,"roa":4.98,"roi":9.2,"pa":0.28,"ga":0.52,"cr":18.28,"cl":25.1,"lq":72893424.72,"vpa":5.64,"lpa":1.02,"peg":0.05,"mc":9100000000.0},{"t":"FRAS3","p":13.96,"dy":7.18,"pl":10.13,"pvp":1.22,"mb":36.76,"me":19.32,"ml":11.76,"pe":7.25,"ev":7.39,"de":0.28,"dp":0.15,"ps":1.19,"lc":1.67,"roe":12.1,"roa":5.89,"roi":11.95,"pa":0.49,"ga":0.5,"cr":10.13,"cl":null,"lq":2620781.58,"vpa":11.47,"lpa":1.38,"peg":null,"mc":2700000000.0},{"t":"GGBR4","p":13.89,"dy":3.04,"pl":7.77,"pvp":0.77,"mb":19.81,"me":12.62,"ml":8.51,"pe":5.62,"ev":4.71,"de":0.98,"dp":0.29,"ps":0.66,"lc":1.85,"roe":9.87,"roa":6.02,"roi":12.35,"pa":0.61,"ga":0.71,"cr":8.17,"cl":-1.47,"lq":414990714.27,"vpa":18.06,"lpa":1.79,"peg":-0.05,"mc":69100000000.0},{"t":"GGPS3","p":5.99,"dy":4.33,"pl":9.8,"pvp":0.88,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":8.99,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":4684895.23,"vpa":6.81,"lpa":0.61,"peg":null,"mc":2900000000.0},{"t":"GOAU4","p":7.45,"dy":8.59,"pl":6.28,"pvp":0.71,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":11.26,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":77174063.82,"vpa":10.53,"lpa":1.19,"peg":null,"mc":15400000000.0},{"t":"GRND3","p":11.96,"dy":5.77,"pl":11.49,"pvp":2.06,"mb":47.91,"me":18.57,"ml":15.28,"pe":9.27,"ev":9.37,"de":-0.43,"dp":-0.3,"ps":1.75,"lc":3.59,"roe":17.93,"roa":12.63,"roi":20.88,"pa":0.7,"ga":0.83,"cr":7.54,"cl":12.42,"lq":10009207.45,"vpa":5.8,"lpa":1.04,"peg":0.01,"mc":5600000000.0},{"t":"HAPV3","p":3.23,"dy":null,"pl":null,"pvp":0.74,"mb":null,"me":11.36,"ml":-9.52,"pe":7.28,"ev":13.38,"de":3.18,"dp":0.89,"ps":0.22,"lc":1.61,"roe":-9.98,"roa":-2.32,"roi":0.16,"pa":0.23,"ga":0.24,"cr":8.52,"cl":null,"lq":58017994.12,"vpa":4.35,"lpa":null,"peg":null,"mc":9800000000.0},{"t":"HBOR3","p":7.91,"dy":10.04,"pl":5.79,"pvp":0.96,"mb":22.35,"me":16.38,"ml":12.97,"pe":4.11,"ev":3.72,"de":-1.65,"dp":-0.81,"ps":0.75,"lc":3.62,"roe":16.6,"roa":7.78,"roi":19.23,"pa":0.47,"ga":0.6,"cr":30.13,"cl":39.22,"lq":13628065.16,"vpa":8.22,"lpa":1.37,"peg":0.02,"mc":2800000000.0},{"t":"HYPE3","p":28.12,"dy":4.27,"pl":16.04,"pvp":2.64,"mb":67.91,"me":22.38,"ml":17.44,"pe":14.09,"ev":13.25,"de":1.02,"dp":0.79,"ps":2.79,"lc":2.74,"roe":16.47,"roa":7.41,"roi":13.36,"pa":0.45,"ga":0.43,"cr":16.83,"cl":13.73,"lq":72843001.31,"vpa":10.66,"lpa":1.75,"peg":0.0,"mc":31900000000.0},{"t":"IGTI11","p":25.37,"dy":3.87,"pl":24.4,"pvp":2.7,"mb":null,"me":23.9,"ml":11.27,"pe":13.27,"ev":15.49,"de":2.15,"dp":1.52,"ps":2.75,"lc":2.4,"roe":11.04,"roa":2.72,"roi":6.32,"pa":0.25,"ga":0.24,"cr":null,"cl":null,"lq":117069451.18,"vpa":9.4,"lpa":1.04,"peg":null,"mc":30900000000.0},{"t":"IRBR3","p":6.83,"dy":3.66,"pl":14.23,"pvp":1.33,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":9.38,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":28553568.07,"vpa":5.15,"lpa":0.48,"peg":null,"mc":9400000000.0},{"t":"ITSA4","p":9.91,"dy":5.85,"pl":8.53,"pvp":1.41,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":16.56,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":424034093.07,"vpa":7.02,"lpa":1.16,"peg":null,"mc":104600000000.0},{"t":"ITUB4","p":33.65,"dy":5.55,"pl":9.57,"pvp":1.93,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":20.2,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":1297741434.36,"vpa":17.43,"lpa":3.51,"peg":null,"mc":318500000000.0},{"t":"JBSS3","p":30.48,"dy":4.99,"pl":7.92,"pvp":2.06,"mb":14.09,"me":8.76,"ml":8.63,"pe":5.25,"ev":5.14,"de":0.99,"dp":0.79,"ps":0.68,"lc":1.29,"roe":26.0,"roa":9.42,"roi":17.76,"pa":0.36,"ga":1.09,"cr":13.08,"cl":null,"lq":303890397.1,"vpa":14.81,"lpa":3.85,"peg":null,"mc":84500000000.0},{"t":"JHSF3","p":4.26,"dy":5.16,"pl":7.54,"pvp":0.58,"mb":64.23,"me":29.57,"ml":21.84,"pe":4.49,"ev":7.88,"de":2.19,"dp":0.43,"ps":1.64,"lc":3.44,"roe":7.67,"roa":3.32,"roi":8.64,"pa":0.43,"ga":0.15,"cr":8.73,"cl":null,"lq":7244268.7,"vpa":7.38,"lpa":0.56,"peg":null,"mc":6400000000.0},{"t":"JSLG3","p":6.28,"dy":3.68,"pl":7.55,"pvp":0.58,"mb":null,"me":18.19,"ml":6.82,"pe":3.64,"ev":5.94,"de":2.24,"dp":0.5,"ps":0.52,"lc":1.24,"roe":7.71,"roa":2.22,"roi":6.46,"pa":0.29,"ga":0.33,"cr":null,"cl":null,"lq":14432614.35,"vpa":10.81,"lpa":0.83,"peg":null,"mc":9100000000.0},{"t":"KEPL3","p":18.31,"dy":6.83,"pl":8.25,"pvp":1.83,"mb":38.2,"me":24.87,"ml":15.28,"pe":6.07,"ev":6.52,"de":0.27,"dp":0.24,"ps":1.26,"lc":1.85,"roe":22.19,"roa":11.32,"roi":18.42,"pa":0.51,"ga":0.74,"cr":16.18,"cl":23.7,"lq":4530261.51,"vpa":10.01,"lpa":2.22,"peg":0.03,"mc":2800000000.0},{"t":"KLBN11","p":18.02,"dy":4.83,"pl":9.49,"pvp":1.4,"mb":44.12,"me":32.98,"ml":17.48,"pe":6.06,"ev":7.77,"de":1.61,"dp":0.64,"ps":1.66,"lc":2.44,"roe":14.75,"roa":6.48,"roi":11.98,"pa":0.44,"ga":0.37,"cr":9.55,"cl":10.03,"lq":100671600.95,"vpa":12.88,"lpa":1.9,"peg":0.0,"mc":38700000000.0},{"t":"LAVV3","p":12.25,"dy":5.41,"pl":9.03,"pvp":0.95,"mb":37.31,"me":21.65,"ml":15.15,"pe":6.45,"ev":6.15,"de":-1.48,"dp":-0.59,"ps":1.36,"lc":2.88,"roe":10.52,"roa":4.46,"roi":12.79,"pa":0.42,"ga":0.29,"cr":30.56,"cl":null,"lq":7688011.53,"vpa":12.88,"lpa":1.36,"peg":null,"mc":2400000000.0},{"t":"LEVE3","p":24.95,"dy":8.79,"pl":9.32,"pvp":1.65,"mb":26.53,"me":17.69,"ml":13.08,"pe":6.99,"ev":6.58,"de":0.02,"dp":0.02,"ps":1.22,"lc":2.82,"roe":17.73,"roa":10.53,"roi":20.13,"pa":0.59,"ga":0.81,"cr":10.15,"cl":15.78,"lq":8924459.94,"vpa":15.15,"lpa":2.68,"peg":0.01,"mc":5600000000.0},{"t":"LOGG3","p":18.94,"dy":5.53,"pl":13.82,"pvp":0.91,"mb":null,"me":64.42,"ml":57.16,"pe":5.78,"ev":8.93,"de":3.27,"dp":0.67,"ps":5.27,"lc":5.07,"roe":6.59,"roa":2.97,"roi":6.59,"pa":0.45,"ga":0.05,"cr":null,"cl":null,"lq":18126929.58,"vpa":20.82,"lpa":1.37,"peg":null,"mc":8400000000.0},{"t":"LREN3","p":15.81,"dy":4.29,"pl":18.35,"pvp":2.0,"mb":56.54,"me":12.28,"ml":7.27,"pe":17.39,"ev":22.47,"de":4.38,"dp":1.81,"ps":1.33,"lc":2.28,"roe":10.91,"roa":3.51,"roi":5.68,"pa":0.32,"ga":0.48,"cr":4.77,"cl":null,"lq":178891065.31,"vpa":7.91,"lpa":0.86,"peg":null,"mc":27600000000.0},{"t":"MDIA3","p":29.2,"dy":8.63,"pl":12.47,"pvp":3.16,"mb":40.99,"me":24.96,"ml":17.42,"pe":9.67,"ev":10.15,"de":-0.16,"dp":-0.1,"ps":2.12,"lc":1.0,"roe":25.33,"roa":13.84,"roi":26.83,"pa":0.55,"ga":0.79,"cr":7.61,"cl":9.1,"lq":17777059.22,"vpa":9.24,"lpa":2.34,"peg":0.02,"mc":10700000000.0},{"t":"MGLU3","p":2.05,"dy":null,"pl":null,"pvp":1.85,"mb":27.03,"me":-1.4,"ml":-4.04,"pe":null,"ev":null,"de":null,"dp":null,"ps":0.13,"lc":1.41,"roe":null,"roa":null,"roi":null,"pa":null,"ga":0.95,"cr":9.74,"cl":null,"lq":205386034.85,"vpa":1.11,"lpa":null,"peg":null,"mc":18400000000.0},{"t":"MILS3","p":11.13,"dy":4.53,"pl":12.39,"pvp":1.55,"mb":null,"me":15.7,"ml":7.41,"pe":7.88,"ev":8.33,"de":1.17,"dp":0.56,"ps":0.92,"lc":1.44,"roe":12.54,"roa":4.86,"roi":9.9,"pa":0.39,"ga":0.52,"cr":null,"cl":null,"lq":14609960.04,"vpa":7.19,"lpa":0.9,"peg":null,"mc":7800000000.0},{"t":"MRVE3","p":8.72,"dy":7.21,"pl":6.33,"pvp":0.72,"mb":37.86,"me":24.49,"ml":15.4,"pe":4.44,"ev":5.31,"de":0.65,"dp":0.18,"ps":0.98,"lc":2.88,"roe":11.4,"roa":3.79,"roi":13.43,"pa":0.33,"ga":0.25,"cr":2.45,"cl":null,"lq":66636817.81,"vpa":12.13,"lpa":1.38,"peg":null,"mc":10200000000.0},{"t":"MULT3","p":24.98,"dy":4.47,"pl":18.39,"pvp":1.63,"mb":null,"me":71.08,"ml":34.17,"pe":8.47,"ev":14.48,"de":5.06,"dp":1.75,"ps":5.94,"lc":1.93,"roe":8.88,"roa":2.64,"roi":5.59,"pa":0.3,"ga":0.08,"cr":9.15,"cl":null,"lq":85165773.6,"vpa":15.3,"lpa":1.36,"peg":null,"mc":22400000000.0},{"t":"MYPK3","p":15.45,"dy":6.07,"pl":7.72,"pvp":0.78,"mb":17.95,"me":9.62,"ml":8.37,"pe":4.96,"ev":5.28,"de":1.04,"dp":0.38,"ps":0.65,"lc":1.89,"roe":10.1,"roa":5.43,"roi":12.85,"pa":0.54,"ga":0.65,"cr":6.42,"cl":null,"lq":2937048.89,"vpa":19.78,"lpa":2.0,"peg":null,"mc":2300000000.0},{"t":"NATU3","p":13.93,"dy":3.62,"pl":33.17,"pvp":null,"mb":68.18,"me":8.46,"ml":4.19,"pe":40.28,"ev":34.15,"de":4.35,"dp":null,"ps":1.26,"lc":1.12,"roe":null,"roa":1.65,"roi":7.23,"pa":null,"ga":0.39,"cr":7.96,"cl":null,"lq":83649395.33,"vpa":null,"lpa":0.42,"peg":null,"mc":28100000000.0},{"t":"NEOE3","p":18.12,"dy":7.98,"pl":13.67,"pvp":1.43,"mb":null,"me":57.74,"ml":28.25,"pe":7.25,"ev":12.15,"de":4.3,"dp":2.18,"ps":3.86,"lc":1.37,"roe":10.43,"roa":2.67,"roi":6.18,"pa":0.26,"ga":0.09,"cr":35.28,"cl":null,"lq":15085819.06,"vpa":12.67,"lpa":1.33,"peg":null,"mc":10900000000.0},{"t":"NTCO3","p":15.93,"dy":3.14,"pl":null,"pvp":null,"mb":65.72,"me":9.02,"ml":-10.25,"pe":null,"ev":null,"de":null,"dp":null,"ps":1.73,"lc":1.35,"roe":null,"roa":null,"roi":null,"pa":null,"ga":0.41,"cr":3.21,"cl":null,"lq":32157777.99,"vpa":null,"lpa":null,"peg":null,"mc":25400000000.0},{"t":"ODPV3","p":13.24,"dy":6.26,"pl":10.25,"pvp":2.35,"mb":null,"me":23.37,"ml":21.38,"pe":9.2,"ev":9.98,"de":0.27,"dp":0.25,"ps":2.19,"lc":1.4,"roe":22.93,"roa":10.39,"roi":22.63,"pa":0.45,"ga":0.47,"cr":7.45,"cl":11.99,"lq":23636467.17,"vpa":5.63,"lpa":1.29,"peg":0.01,"mc":9600000000.0},{"t":"PCAR3","p":8.88,"dy":3.83,"pl":7.38,"pvp":0.76,"mb":23.53,"me":3.5,"ml":3.68,"pe":6.87,"ev":9.49,"de":3.3,"dp":0.52,"ps":0.27,"lc":0.87,"roe":10.27,"roa":3.44,"roi":6.51,"pa":0.34,"ga":0.94,"cr":3.37,"cl":null,"lq":8083729.32,"vpa":11.72,"lpa":1.2,"peg":null,"mc":6400000000.0},{"t":"PETR3","p":36.16,"dy":9.35,"pl":5.0,"pvp":1.29,"mb":43.2,"me":31.51,"ml":22.93,"pe":2.9,"ev":3.49,"de":-0.53,"dp":-0.19,"ps":1.15,"lc":1.04,"roe":25.7,"roa":13.94,"roi":30.33,"pa":0.54,"ga":0.61,"cr":7.01,"cl":null,"lq":404843453.79,"vpa":28.0,"lpa":7.24,"peg":null,"mc":470200000000.0},{"t":"PETR4","p":35.78,"dy":10.33,"pl":4.94,"pvp":1.28,"mb":43.2,"me":31.51,"ml":22.93,"pe":2.87,"ev":3.45,"de":-0.53,"dp":-0.19,"ps":1.14,"lc":1.04,"roe":25.7,"roa":13.94,"roi":30.33,"pa":0.54,"ga":0.61,"cr":7.01,"cl":null,"lq":1745026620.63,"vpa":28.0,"lpa":7.24,"peg":null,"mc":470200000000.0},{"t":"PINE4","p":4.34,"dy":9.68,"pl":4.83,"pvp":0.51,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":10.54,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":2267780.9,"vpa":8.55,"lpa":0.9,"peg":null,"mc":1400000000.0},{"t":"POSI3","p":11.15,"dy":6.26,"pl":8.49,"pvp":1.6,"mb":39.13,"me":11.94,"ml":7.43,"pe":9.78,"ev":10.37,"de":1.12,"dp":0.72,"ps":0.63,"lc":2.32,"roe":18.84,"roa":7.57,"roi":12.75,"pa":0.4,"ga":0.64,"cr":2.23,"cl":30.28,"lq":7421753.49,"vpa":6.97,"lpa":1.31,"peg":0.02,"mc":2600000000.0},{"t":"PRIO3","p":42.37,"dy":3.12,"pl":8.09,"pvp":2.65,"mb":null,"me":72.5,"ml":47.41,"pe":3.75,"ev":4.28,"de":-0.29,"dp":-0.42,"ps":3.84,"lc":3.2,"roe":32.77,"roa":17.35,"roi":31.99,"pa":0.53,"ga":0.37,"cr":47.96,"cl":null,"lq":484742523.53,"vpa":15.97,"lpa":5.24,"peg":null,"mc":60600000000.0},{"t":"PSSA3","p":108.55,"dy":4.53,"pl":9.5,"pvp":2.76,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":29.06,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":199097834.43,"vpa":39.29,"lpa":11.42,"peg":null,"mc":64600000000.0},{"t":"QUAL3","p":7.0,"dy":null,"pl":null,"pvp":0.5,"mb":null,"me":5.35,"ml":-3.83,"pe":14.92,"ev":23.77,"de":5.81,"dp":1.22,"ps":0.34,"lc":1.11,"roe":-3.82,"roa":-0.68,"roi":0.74,"pa":0.18,"ga":0.18,"cr":4.31,"cl":null,"lq":22879819.87,"vpa":14.03,"lpa":null,"peg":null,"mc":11500000000.0},{"t":"RADL3","p":21.13,"dy":1.7,"pl":24.3,"pvp":3.44,"mb":28.93,"me":11.39,"ml":7.44,"pe":18.82,"ev":20.26,"de":2.05,"dp":1.64,"ps":1.81,"lc":1.9,"roe":14.17,"roa":5.54,"roi":9.93,"pa":0.39,"ga":0.74,"cr":16.15,"cl":13.2,"lq":206600490.73,"vpa":6.14,"lpa":0.87,"peg":0.01,"mc":38000000000.0},{"t":"RAIL3","p":22.81,"dy":3.55,"pl":14.2,"pvp":1.38,"mb":null,"me":44.75,"ml":15.36,"pe":9.09,"ev":10.71,"de":2.86,"dp":1.21,"ps":2.18,"lc":1.03,"roe":9.73,"roa":3.26,"roi":7.35,"pa":0.34,"ga":0.21,"cr":5.5,"cl":11.62,"lq":127940249.5,"vpa":16.56,"lpa":1.61,"peg":0.01,"mc":68300000000.0},{"t":"RAIZ4","p":3.97,"dy":5.29,"pl":5.81,"pvp":0.5,"mb":5.09,"me":1.68,"ml":2.41,"pe":3.58,"ev":7.07,"de":4.44,"dp":0.88,"ps":0.14,"lc":1.11,"roe":8.59,"roa":2.0,"roi":4.31,"pa":0.23,"ga":0.83,"cr":7.66,"cl":null,"lq":39183716.48,"vpa":7.93,"lpa":0.68,"peg":null,"mc":11000000000.0},{"t":"RANI3","p":5.97,"dy":5.69,"pl":10.65,"pvp":0.87,"mb":32.88,"me":19.83,"ml":11.34,"pe":6.55,"ev":7.99,"de":1.7,"dp":0.55,"ps":0.99,"lc":1.82,"roe":8.19,"roa":3.77,"roi":7.74,"pa":0.46,"ga":0.33,"cr":9.19,"cl":null,"lq":5069048.65,"vpa":6.84,"lpa":0.56,"peg":null,"mc":4500000000.0},{"t":"RAPT4","p":9.17,"dy":7.85,"pl":7.47,"pvp":0.77,"mb":19.25,"me":9.13,"ml":6.87,"pe":5.16,"ev":5.56,"de":0.53,"dp":0.2,"ps":0.51,"lc":2.03,"roe":10.37,"roa":5.98,"roi":11.43,"pa":0.57,"ga":0.87,"cr":5.5,"cl":null,"lq":14091027.42,"vpa":11.93,"lpa":1.23,"peg":null,"mc":5800000000.0},{"t":"RDOR3","p":28.35,"dy":1.34,"pl":33.59,"pvp":2.85,"mb":35.78,"me":14.65,"ml":8.47,"pe":24.01,"ev":23.46,"de":4.16,"dp":1.72,"ps":2.84,"lc":1.5,"roe":8.48,"roa":2.22,"roi":4.97,"pa":0.26,"ga":0.26,"cr":26.78,"cl":null,"lq":130476011.03,"vpa":9.93,"lpa":0.84,"peg":null,"mc":89200000000.0},{"t":"RECV3","p":20.5,"dy":null,"pl":null,"pvp":0.88,"mb":null,"me":null,"ml":-7.17,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":null,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":11793671.85,"vpa":23.26,"lpa":null,"peg":null,"mc":7800000000.0},{"t":"RENT3","p":52.13,"dy":1.62,"pl":38.84,"pvp":3.5,"mb":null,"me":13.37,"ml":4.24,"pe":30.07,"ev":17.25,"de":2.58,"dp":3.84,"ps":1.65,"lc":1.58,"roe":9.01,"roa":1.65,"roi":4.57,"pa":0.18,"ga":0.39,"cr":15.43,"cl":null,"lq":283827028.26,"vpa":14.9,"lpa":1.34,"peg":null,"mc":47500000000.0},{"t":"ROMI3","p":12.55,"dy":7.39,"pl":6.55,"pvp":0.65,"mb":30.43,"me":15.29,"ml":11.88,"pe":4.88,"ev":3.58,"de":-1.15,"dp":-0.3,"ps":0.78,"lc":3.66,"roe":9.94,"roa":7.32,"roi":13.13,"pa":0.74,"ga":0.62,"cr":9.13,"cl":null,"lq":4237012.6,"vpa":19.38,"lpa":1.92,"peg":null,"mc":1800000000.0},{"t":"SANB11","p":30.95,"dy":7.66,"pl":10.66,"pvp":1.24,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":11.66,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":119491441.6,"vpa":24.93,"lpa":2.9,"peg":null,"mc":102900000000.0},{"t":"SAPR11","p":21.71,"dy":8.39,"pl":9.03,"pvp":1.23,"mb":null,"me":42.22,"ml":19.55,"pe":6.15,"ev":10.25,"de":4.52,"dp":2.2,"ps":1.87,"lc":1.04,"roe":13.62,"roa":3.96,"roi":6.88,"pa":0.29,"ga":0.2,"cr":9.47,"cl":14.9,"lq":17499849.43,"vpa":17.63,"lpa":2.4,"peg":0.01,"mc":15000000000.0},{"t":"SBSP3","p":70.93,"dy":3.12,"pl":11.81,"pvp":1.48,"mb":null,"me":41.28,"ml":22.78,"pe":7.57,"ev":11.59,"de":2.71,"dp":1.57,"ps":2.69,"lc":0.94,"roe":12.54,"roa":4.42,"roi":7.37,"pa":0.35,"ga":0.19,"cr":10.94,"cl":20.45,"lq":205695621.05,"vpa":47.95,"lpa":6.0,"peg":0.01,"mc":51200000000.0},{"t":"SLCE3","p":16.89,"dy":8.75,"pl":6.95,"pvp":0.79,"mb":46.85,"me":27.93,"ml":16.91,"pe":4.81,"ev":6.09,"de":1.71,"dp":0.39,"ps":1.17,"lc":1.67,"roe":11.38,"roa":5.76,"roi":10.51,"pa":0.51,"ga":0.34,"cr":19.11,"cl":21.08,"lq":14017699.12,"vpa":21.36,"lpa":2.43,"peg":0.03,"mc":8400000000.0},{"t":"SMTO3","p":26.47,"dy":5.12,"pl":9.93,"pvp":1.48,"mb":31.17,"me":17.09,"ml":15.37,"pe":7.4,"ev":8.05,"de":1.89,"dp":0.78,"ps":1.52,"lc":2.33,"roe":14.93,"roa":5.82,"roi":11.57,"pa":0.39,"ga":0.38,"cr":8.75,"cl":18.84,"lq":20684893.01,"vpa":17.85,"lpa":2.67,"peg":0.01,"mc":10200000000.0},{"t":"SOMA3","p":7.22,"dy":3.86,"pl":22.58,"pvp":2.12,"mb":59.81,"me":11.98,"ml":5.81,"pe":22.0,"ev":25.94,"de":4.14,"dp":1.87,"ps":1.31,"lc":1.38,"roe":9.43,"roa":2.12,"roi":3.84,"pa":0.22,"ga":0.36,"cr":18.76,"cl":null,"lq":51527993.0,"vpa":3.41,"lpa":0.32,"peg":null,"mc":23300000000.0},{"t":"STBP3","p":13.73,"dy":10.36,"pl":7.49,"pvp":1.08,"mb":null,"me":50.46,"ml":32.55,"pe":3.65,"ev":5.84,"de":1.97,"dp":0.69,"ps":2.43,"lc":1.19,"roe":14.44,"roa":5.97,"roi":11.58,"pa":0.41,"ga":0.13,"cr":15.87,"cl":null,"lq":13162688.83,"vpa":12.68,"lpa":1.83,"peg":null,"mc":6600000000.0},{"t":"SULA11","p":22.32,"dy":5.38,"pl":8.56,"pvp":1.32,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":15.39,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":34432726.38,"vpa":16.9,"lpa":2.61,"peg":null,"mc":35400000000.0},{"t":"SUZB3","p":55.03,"dy":6.18,"pl":9.46,"pvp":2.14,"mb":45.7,"me":37.29,"ml":21.37,"pe":5.71,"ev":6.82,"de":2.75,"dp":1.87,"ps":2.02,"lc":1.61,"roe":22.6,"roa":7.96,"roi":14.03,"pa":0.35,"ga":0.37,"cr":8.44,"cl":null,"lq":421695001.13,"vpa":25.73,"lpa":5.82,"peg":null,"mc":141100000000.0},{"t":"TAEE11","p":38.88,"dy":10.31,"pl":9.62,"pvp":1.81,"mb":null,"me":73.09,"ml":37.53,"pe":5.88,"ev":10.05,"de":4.25,"dp":3.0,"ps":3.61,"lc":0.61,"roe":18.82,"roa":5.25,"roi":8.54,"pa":0.28,"ga":0.14,"cr":7.21,"cl":8.64,"lq":55082618.65,"vpa":21.48,"lpa":4.04,"peg":0.02,"mc":23400000000.0},{"t":"TEND3","p":14.97,"dy":10.69,"pl":6.59,"pvp":0.96,"mb":29.62,"me":16.74,"ml":13.29,"pe":4.55,"ev":4.51,"de":-1.28,"dp":-0.59,"ps":0.88,"lc":2.1,"roe":14.58,"roa":5.65,"roi":15.0,"pa":0.39,"ga":0.42,"cr":26.59,"cl":39.17,"lq":16396948.4,"vpa":15.62,"lpa":2.27,"peg":0.02,"mc":2600000000.0},{"t":"TIMS3","p":14.59,"dy":5.1,"pl":11.82,"pvp":1.41,"mb":69.39,"me":25.61,"ml":14.45,"pe":8.59,"ev":6.84,"de":-0.09,"dp":-0.04,"ps":1.71,"lc":0.68,"roe":11.96,"roa":5.55,"roi":13.24,"pa":0.46,"ga":0.38,"cr":6.19,"cl":16.68,"lq":105893862.2,"vpa":10.34,"lpa":1.23,"peg":0.01,"mc":29200000000.0},{"t":"TOTS3","p":25.99,"dy":2.35,"pl":26.14,"pvp":5.41,"mb":72.35,"me":17.03,"ml":13.63,"pe":21.29,"ev":23.11,"de":2.07,"dp":2.74,"ps":3.56,"lc":1.41,"roe":20.69,"roa":7.35,"roi":13.15,"pa":0.36,"ga":0.54,"cr":13.25,"cl":9.17,"lq":179699451.71,"vpa":4.81,"lpa":0.99,"peg":0.01,"mc":50100000000.0},{"t":"TUPY3","p":22.91,"dy":4.81,"pl":9.42,"pvp":1.02,"mb":19.41,"me":10.24,"ml":6.93,"pe":6.16,"ev":6.36,"de":1.13,"dp":0.52,"ps":0.65,"lc":2.24,"roe":10.85,"roa":5.69,"roi":11.63,"pa":0.52,"ga":0.82,"cr":15.71,"cl":null,"lq":12031978.42,"vpa":22.41,"lpa":2.43,"peg":null,"mc":6700000000.0},{"t":"UGPA3","p":23.45,"dy":3.72,"pl":14.37,"pvp":1.41,"mb":null,"me":7.59,"ml":4.07,"pe":10.01,"ev":12.15,"de":2.55,"dp":1.23,"ps":0.58,"lc":1.41,"roe":9.82,"roa":3.06,"roi":7.54,"pa":0.31,"ga":0.76,"cr":8.02,"cl":null,"lq":191099093.25,"vpa":16.62,"lpa":1.63,"peg":null,"mc":36300000000.0},{"t":"USIM5","p":5.87,"dy":1.36,"pl":null,"pvp":0.46,"mb":10.34,"me":0.28,"ml":-5.7,"pe":175.71,"ev":null,"de":null,"dp":null,"ps":0.22,"lc":1.19,"roe":null,"roa":null,"roi":null,"pa":null,"ga":0.48,"cr":-5.82,"cl":null,"lq":191477124.41,"vpa":12.64,"lpa":null,"peg":null,"mc":17600000000.0},{"t":"VALE3","p":55.7,"dy":10.48,"pl":7.25,"pvp":1.31,"mb":49.29,"me":37.24,"ml":24.52,"pe":4.11,"ev":4.72,"de":-0.05,"dp":-0.02,"ps":1.78,"lc":1.73,"roe":18.1,"roa":11.55,"roi":22.98,"pa":0.64,"ga":0.47,"cr":2.14,"cl":null,"lq":2209946524.27,"vpa":42.51,"lpa":7.68,"peg":null,"mc":237500000000.0},{"t":"VAMO3","p":4.79,"dy":null,"pl":null,"pvp":0.66,"mb":null,"me":19.44,"ml":-0.92,"pe":14.19,"ev":30.44,"de":8.87,"dp":1.82,"ps":0.65,"lc":1.24,"roe":-1.54,"roa":-0.26,"roi":3.93,"pa":0.17,"ga":0.28,"cr":null,"cl":null,"lq":79491440.37,"vpa":7.28,"lpa":null,"peg":null,"mc":13400000000.0},{"t":"VBBR3","p":22.38,"dy":9.37,"pl":8.35,"pvp":1.56,"mb":null,"me":14.95,"ml":12.74,"pe":5.54,"ev":5.35,"de":0.03,"dp":0.02,"ps":1.07,"lc":1.35,"roe":18.67,"roa":8.94,"roi":19.57,"pa":0.48,"ga":0.7,"cr":7.65,"cl":null,"lq":164441483.56,"vpa":14.34,"lpa":2.68,"peg":null,"mc":29400000000.0},{"t":"VIVA3","p":42.46,"dy":3.64,"pl":12.17,"pvp":2.27,"mb":null,"me":21.52,"ml":12.91,"pe":7.72,"ev":9.35,"de":1.38,"dp":1.12,"ps":1.57,"lc":1.38,"roe":18.67,"roa":5.76,"roi":11.99,"pa":0.31,"ga":0.44,"cr":null,"cl":null,"lq":21813977.77,"vpa":18.71,"lpa":3.49,"peg":null,"mc":11600000000.0},{"t":"VIVT3","p":48.89,"dy":6.76,"pl":17.63,"pvp":1.8,"mb":62.07,"me":16.79,"ml":10.24,"pe":13.38,"ev":8.87,"de":0.64,"dp":0.47,"ps":1.8,"lc":0.99,"roe":10.2,"roa":5.01,"roi":11.43,"pa":0.49,"ga":0.49,"cr":6.12,"cl":5.46,"lq":253225640.51,"vpa":27.15,"lpa":2.77,"peg":0.02,"mc":90500000000.0},{"t":"VLID3","p":16.95,"dy":9.12,"pl":6.43,"pvp":1.47,"mb":null,"me":26.08,"ml":24.05,"pe":4.46,"ev":5.08,"de":0.89,"dp":0.69,"ps":1.55,"lc":1.45,"roe":22.84,"roa":12.94,"roi":27.84,"pa":0.57,"ga":0.54,"cr":11.91,"cl":13.02,"lq":13022225.07,"vpa":11.52,"lpa":2.64,"peg":0.01,"mc":5900000000.0},{"t":"VTRU3","p":21.01,"dy":5.23,"pl":10.46,"pvp":1.65,"mb":null,"me":18.29,"ml":12.69,"pe":7.61,"ev":8.93,"de":2.04,"dp":0.93,"ps":1.33,"lc":1.78,"roe":15.77,"roa":5.12,"roi":10.93,"pa":0.32,"ga":0.4,"cr":null,"cl":null,"lq":7037918.73,"vpa":12.75,"lpa":2.01,"peg":null,"mc":6400000000.0},{"t":"VULC3","p":13.63,"dy":5.14,"pl":11.45,"pvp":1.74,"mb":38.53,"me":19.97,"ml":14.74,"pe":8.05,"ev":7.71,"de":-0.26,"dp":-0.15,"ps":1.68,"lc":3.59,"roe":15.19,"roa":10.44,"roi":20.97,"pa":0.69,"ga":0.71,"cr":7.62,"cl":14.76,"lq":3521498.01,"vpa":7.84,"lpa":1.19,"peg":0.01,"mc":2700000000.0},{"t":"WEGE3","p":48.47,"dy":1.46,"pl":34.04,"pvp":11.83,"mb":36.97,"me":22.23,"ml":20.16,"pe":24.07,"ev":25.12,"de":-0.89,"dp":-3.35,"ps":6.87,"lc":2.26,"roe":34.75,"roa":19.07,"roi":29.78,"pa":0.55,"ga":0.94,"cr":20.71,"cl":25.19,"lq":697726455.06,"vpa":4.1,"lpa":1.42,"peg":0.01,"mc":214200000000.0},{"t":"WIZC3","p":14.96,"dy":9.4,"pl":10.0,"pvp":3.12,"mb":null,"me":null,"ml":null,"pe":null,"ev":null,"de":null,"dp":null,"ps":null,"lc":null,"roe":31.2,"roa":null,"roi":null,"pa":null,"ga":null,"cr":null,"cl":null,"lq":12381264.3,"vpa":4.8,"lpa":1.5,"peg":null,"mc":5800000000.0},{"t":"YDUQ3","p":20.77,"dy":8.38,"pl":8.37,"pvp":1.4,"mb":null,"me":22.1,"ml":10.91,"pe":5.91,"ev":7.44,"de":2.16,"dp":0.94,"ps":0.91,"lc":1.77,"roe":16.72,"roa":5.36,"roi":11.12,"pa":0.32,"ga":0.49,"cr":10.52,"cl":14.59,"lq":17244501.75,"vpa":14.8,"lpa":2.48,"peg":0.01,"mc":9000000000.0}];
+
+
+// ── 2. CONSTANTS & FILTER ────────────────────────────────────────
+const MIN_MC     = 5_000_000_000;
+const D_FILTRADO = D.filter(x => x.mc && x.mc >= MIN_MC);
+let   CDI_       = 14.75;   // updated live from BCB
+const ERP        = 5.50;
+let   KE         = (CDI_ + ERP) / 100;
+const GT         = 0.06;
+
+// ── 3. SECTORS ───────────────────────────────────────────────────
+const SETORES={ABCB4:'Financeiro',BBAS3:'Financeiro',BBDC3:'Financeiro',BBDC4:'Financeiro',BBSE3:'Financeiro',BPAC11:'Financeiro',BPAN4:'Financeiro',BMEB4:'Financeiro',BMGB4:'Financeiro',BRBI11:'Financeiro',BRSR6:'Financeiro',CXSE3:'Financeiro',GGPS3:'Financeiro',IRBR3:'Financeiro',ITSA3:'Financeiro',ITSA4:'Financeiro',ITUB3:'Financeiro',ITUB4:'Financeiro',PINE4:'Financeiro',PSSA3:'Financeiro',SANB11:'Financeiro',SANB3:'Financeiro',SANB4:'Financeiro',SULA11:'Financeiro',WIZC3:'Financeiro',PETR3:'Petróleo',PETR4:'Petróleo',PRIO3:'Petróleo',RECV3:'Petróleo',BRAV3:'Petróleo',RAIZ4:'Petróleo',VBBR3:'Petróleo',CSAN3:'Petróleo',VALE3:'Mineração',GGBR4:'Mineração',GOAU3:'Mineração',GOAU4:'Mineração',USIM3:'Mineração',USIM5:'Mineração',CSNA3:'Mineração',CMIN3:'Mineração',BRAP3:'Mineração',BRAP4:'Mineração',FESA4:'Mineração',EGIE3:'Energia',CPFE3:'Energia',ENGI11:'Energia',AURE3:'Energia',CMIG3:'Energia',CMIG4:'Energia',CPLE6:'Energia',CPLE3:'Energia',CPLE5:'Energia',EQTL3:'Energia',TAEE11:'Energia',TAEE3:'Energia',TAEE4:'Energia',ENEV3:'Energia',ISAE4:'Energia',ALUP11:'Energia',AESB3:'Energia',NEOE3:'Energia',ENAT3:'Energia',LIGT3:'Energia',AGRO3:'Agro/Alimentos',SLCE3:'Agro/Alimentos',SMTO3:'Agro/Alimentos',SOJA3:'Agro/Alimentos',CAML3:'Agro/Alimentos',BEEF3:'Agro/Alimentos',JBSS3:'Agro/Alimentos',BRFS3:'Agro/Alimentos',MDIA3:'Agro/Alimentos',TASA4:'Agro/Alimentos',CYRE3:'Construção',CYRE4:'Construção',MRVE3:'Construção',MTRE3:'Construção',EVEN3:'Construção',EZTC3:'Construção',TEND3:'Construção',HBOR3:'Construção',DIRR3:'Construção',CURY3:'Construção',LAVV3:'Construção',GFSA3:'Construção',JHSF3:'Construção',LOGG3:'Construção',ALOS3:'Construção',MGLU3:'Varejo',LREN3:'Varejo',AZZA3:'Varejo',SBFG3:'Varejo',SOMA3:'Varejo',PETZ3:'Varejo',NTCO3:'Varejo',NATU3:'Varejo',BHIA3:'Varejo',CEAB3:'Varejo',ALPA4:'Varejo',CRFB3:'Varejo',PCAR3:'Varejo',RDOR3:'Saúde',FLRY3:'Saúde',HAPV3:'Saúde',QUAL3:'Saúde',ONCO3:'Saúde',DASA3:'Saúde',BLAU3:'Saúde',ANIM3:'Saúde',OPCT3:'Saúde',HYPE3:'Saúde',ODPV3:'Saúde',RADL3:'Saúde',VIVT3:'Telecom/Tech',TIMS3:'Telecom/Tech',TOTS3:'Telecom/Tech',WEGE3:'Industrial',B3SA3:'Financeiro',POSI3:'Industrial',SBSP3:'Utilities',CSMG3:'Utilities',SAPR11:'Utilities',SAPR3:'Utilities',SAPR4:'Utilities',SUZB3:'Celulose/Papel',KLBN11:'Celulose/Papel',KLBN3:'Celulose/Papel',KLBN4:'Celulose/Papel',DXCO3:'Celulose/Papel',RANI3:'Celulose/Papel',RAIL3:'Logística',JSLG3:'Logística',STBP3:'Logística',MILS3:'Logística',ECOR3:'Logística',VAMO3:'Logística',KEPL3:'Industrial',ROMI3:'Industrial',TUPY3:'Industrial',LEVE3:'Industrial',MYPK3:'Industrial',RAPT4:'Industrial',VULC3:'Industrial',GRND3:'Industrial',FRAS3:'Industrial',YDUQ3:'Educação',COGN3:'Educação',CSED3:'Educação',SEER3:'Educação',MULT3:'Shoppings',IGTI11:'Shoppings',BRST3:'Logística'};
+const sec = t => SETORES[t] || 'Outros';
+
+// ── 4. MODEL INFO ─────────────────────────────────────────────────
+const MODEL_INFO = {
+  dcf:      { name:'DCF — Fluxo de Caixa Descontado', what:'Calcula o preço justo somando todos os lucros futuros esperados, trazidos a valor presente pelo retorno mínimo exigido.', how:'Projeta LPA por 5 anos usando CAGR histórico. Cada ano é descontado pelo Ke (20,25%). Soma-se o valor terminal via Gordon com g=6% ao ano.', int:'Upside > 30% → Compra forte · 10–30% → Observar · 0–10% → Preço justo · < 0% → Caro', lim:'Muito sensível ao Ke. Variação de 1pp altera valor em até 20%. Use o heatmap para entender a faixa de valores.' },
+  graham:   { name:'Graham — Preço Justo Conservador', what:'Fórmula do pai do value investing para comprar ações com grande desconto, criando margem de segurança.', how:'Preço justo = √(22,5 × LPA × VPA). O 22,5 = P/L máximo (15x) × P/VP máximo (1,5x). Graham exigia 30% de desconto.', int:'Desconto ≥ 30% → Margem forte (BUY) · 10–30% → Fraca (OBSERVAR) · < 0% → Acima do justo', lim:'Patrimonialista. Desfavorece tech/serviços com intangíveis. Bancos têm VPA distorcido.' },
+  gordon:   { name:'DDM — Gordon Growth Model', what:'Calcula o preço justo pelos dividendos futuros. Quem paga mais dividendos de forma crescente, vale mais.', how:'P = D₁ ÷ (Ke − g). D₁ = próximo dividendo; Ke = 20,25%; g = ROE × (1 − Payout).', int:'Upside > 25% → BUY · 0–25% → Preço justo · < 0% → Dividend yield já está no preço', lim:'Apenas para empresas maduras pagadoras de dividendos. Exclui g ≥ Ke.' },
+  multiplos:{ name:'Análise por Múltiplos', what:'Compara indicadores de preço e qualidade com benchmarks históricos.', how:'Avalia P/L, P/VP, EV/EBIT, ROE, DY, ROIC e Margem Líquida. Score ponderado e ajustado pelo Risk Score.', int:'Score > 65 → Barato + qualidade (BUY) · 45–65 → Neutro · < 45 → Caro ou baixa qualidade', lim:'Avalia o presente, não o futuro. Empresas cíclicas flutuam — analise o ponto do ciclo.' },
+  fama:     { name:'Fama-French — 5 Fatores', what:'Identifica características que historicamente levaram a retornos superiores no longo prazo.', how:'HML (value), RMW (qualidade), SMB (tamanho), MOM (momentum via CAGR lucros), CMA (crescimento conservador).', int:'Score > 65 → Alta exposição a fatores vencedores · 45–65 → Moderado · < 45 → Baixa', lim:'Padrões históricos que podem demorar anos para se materializar. Tese de longo prazo (3–5 anos).' },
+};
+
+// ── 5. MATH UTILITIES ────────────────────────────────────────────
+const fmt    = (v,d=2) => v==null||isNaN(v)||!isFinite(v)?'—':(+v).toFixed(d);
+const fmtPct = v => v==null||isNaN(v)?'—':(+v).toFixed(1)+'%';
+const fmtM   = v => { if(!v||!isFinite(v)) return '—'; if(v>=1e12) return 'R$'+(v/1e12).toFixed(2)+'T'; if(v>=1e9) return 'R$'+(v/1e9).toFixed(1)+'B'; return 'R$'+(v/1e6).toFixed(0)+'M'; };
+const median = a => { const s=a.filter(x=>x!=null&&isFinite(x)).sort((a,b)=>a-b); if(!s.length) return null; const m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; };
+const avg    = a => { const s=a.filter(x=>x!=null&&isFinite(x)); return s.length?s.reduce((t,x)=>t+x,0)/s.length:null; };
+const stdDev = a => { const s=a.filter(x=>x!=null&&isFinite(x)); if(s.length<2) return 0; const m=avg(s); return Math.sqrt(s.reduce((t,x)=>t+(x-m)**2,0)/s.length); };
+const clamp  = (v,lo,hi) => Math.min(hi,Math.max(lo,v));
+
+// ── 6. SCORE ENGINE ──────────────────────────────────────────────
+const calcRiskScore = s => {
+  let p=0;
+  if(s.roe!=null){p+=s.roe>20?25:s.roe>15?20:s.roe>10?14:s.roe>5?8:s.roe>0?3:0;}else p+=10;
+  if(s.ml!=null) {p+=s.ml>20?25:s.ml>12?20:s.ml>6?13:s.ml>0?6:0;}else p+=10;
+  if(s.de!=null) {p+=s.de<0?25:s.de<1.5?22:s.de<2.5?15:s.de<4?8:2;}else p+=12;
+  if(s.cr!=null) {p+=s.cr>15?25:s.cr>8?20:s.cr>3?14:s.cr>=0?8:2;}else p+=10;
+  return clamp(p,0,100);
+};
+
+const calcFactors = s => {
+  let value=50;
+  if(s.pl&&s.pl>0&&s.pl<80)  value=clamp((15-s.pl)/15*100,0,100);
+  if(s.pvp&&s.pvp>0&&s.pvp<8) value=(value+clamp((2-s.pvp)/2*100,0,100))/2;
+  let qual=50;
+  if(s.roe!=null) qual=clamp(s.roe*3,0,100);
+  if(s.roi!=null) qual=(qual+clamp(s.roi*2.5,0,100))/2;
+  let grow=50;
+  if(s.cl!=null)       grow=clamp(50+s.cl*2,0,100);
+  else if(s.cr!=null)  grow=clamp(50+s.cr*1.5,0,100);
+  let div=50;
+  if(s.dy!=null&&s.dy>0) div=clamp(s.dy/CDI_*100,0,100);
+  const risk=calcRiskScore(s);
+  return {value:Math.round(value),qual:Math.round(qual),grow:Math.round(grow),div:Math.round(div),risk:Math.round(risk)};
+};
+
+const riskAdj  = (raw,risk) => raw*(0.35+0.65*risk/100);
+const convBonus= scores => { const v=scores.filter(x=>x!=null&&isFinite(x)); if(v.length<2) return 1; return clamp(1-stdDev(v)/100*0.3,0.7,1); };
+
+// ── 7. VALUE BADGE ───────────────────────────────────────────────
+const valBadge = (price, fair) => {
+  if(!fair||!price) return '';
+  const disc = (fair-price)/fair*100;
+  if(disc>30)  return '<span class="badge-cheap">Barato</span>';
+  if(disc>10)  return '<span class="badge-fair">Atrativo</span>';
+  if(disc>-10) return '<span class="badge-fair">Justo</span>';
+  return '<span class="badge-exp">Caro</span>';
+};
+
+// ── 8. VERDICT ENGINE ────────────────────────────────────────────
+function genVerdict(s) {
+  const raw=D_FILTRADO.find(x=>x.t===s.t)||{};
+  let rec,rcls;
+  if(s.comp>=65&&s.buys>=3){rec='COMPRA FORTE';rcls='det-verdict';}
+  else if(s.comp>=55&&s.buys>=2){rec='COMPRA';rcls='det-verdict';}
+  else if(s.comp>=45){rec='NEUTRO';rcls='det-verdict vh';}
+  else{rec='EVITAR';rcls='det-verdict vs';}
+
+  const reasons=[];
+  if(s.gUp!=null&&s.gUp>20)     reasons.push(`Graham aponta ${fmt(s.gUp)}% de desconto vs. preço justo`);
+  if(s.dUp2!=null&&s.dUp2>10)   reasons.push(`DCF projeta upside de ${fmt(s.dUp2)}% (CAGR lucros ${fmt(raw.cl)}%)`);
+  if(raw.dy&&raw.dy>10)         reasons.push(`DY de ${fmt(raw.dy)}% — prêmio de ${fmt(raw.dy-CDI_,1)}pp sobre o CDI`);
+  if(raw.pvp&&raw.pvp<1)        reasons.push(`Negocia abaixo do valor patrimonial (P/VP = ${fmt(raw.pvp)}x)`);
+  if(raw.pl&&raw.pl<8)          reasons.push(`P/L de ${fmt(raw.pl)}x — desconto relevante vs. histórico de 12x`);
+  if(raw.roe&&raw.roe>18)       reasons.push(`ROE de ${fmt(raw.roe)}% — cria valor acima do Ke de ${fmt(KE*100)}%`);
+  if(s.buys>=4)                  reasons.push(`${s.buys}/5 modelos sinalizam compra — convergência alta`);
+
+  const risks=[];
+  if(raw.de!=null&&raw.de>3)    risks.push(`Alavancagem elevada: Dívida/EBIT = ${fmt(raw.de)}x`);
+  if(raw.ml!=null&&raw.ml<5)    risks.push(`Margem líquida baixa (${fmt(raw.ml)}%)`);
+  if(raw.roe!=null&&raw.roe<10) risks.push(`ROE de ${fmt(raw.roe)}% abaixo do Ke de ${fmt(KE*100)}%`);
+  if(s.convBonus<0.85)          risks.push(`Divergência entre modelos — penalidade de convergência aplicada`);
+  if(!risks.length) risks.push(`Risco macro: SELIC alta pressiona múltiplos`);
+  risks.push(`Risco de execução: resultados futuros podem não repetir histórico`);
+
+  const body=reasons.length
+    ?`${reasons.slice(0,2).join('. ')}. Retorno esperado de ${fmt(s.expRet)}% (+${fmt(s.expRet-CDI_,1)}pp vs CDI).`
+    :`Score composto ${fmt(s.comp,1)}/100. Retorno esperado ${fmt(s.expRet)}% a.a.`;
+
+  return {rec,rcls,body,risks};
+}
+
+// ── 9. UI UTILITIES ──────────────────────────────────────────────
+const setText=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+const setHTML=(id,v)=>{const e=document.getElementById(id);if(e)e.innerHTML=v;};
+
+const fBar=(label,val,color)=>`<div class="frow"><span class="flbl">${label}</span><div class="ftrack"><div class="ffill" style="width:${val}%;background:${color}"></div></div><span class="fnum" style="color:${val>=65?'#27AE60':val>=45?'#8B6914':'#C0392B'}">${val}</span></div>`;
+
+const pBar=(v,max=100,color='#E8681A')=>{const p=clamp(v/max*100,0,100);const nc=p>=65?'#27AE60':p>=45?'#8B6914':'#C0392B';return `<div class="bw"><div class="bt"><div class="bf" style="width:${p}%;background:${color}"></div></div><span class="bv" style="color:${nc}">${v.toFixed(0)}</span></div>`;};
+
+const scColor=s=>s>=65?'#27AE60':s>=50?'#8B6914':'#C0392B';
+
+const verdict=u=>{
+  if(u>30)  return '<span class="verdict vbuy">Compra Forte</span>';
+  if(u>10)  return '<span class="verdict vobs">Observar</span>';
+  if(u>-10) return '<span class="verdict vhold">Neutro</span>';
+  return '<span class="verdict vsell">Evitar</span>';
+};
+
+const medal=i=>{if(i===0)return'<span class="md md1">1</span>';if(i===1)return'<span class="md md2">2</span>';if(i===2)return'<span class="md md3">3</span>';return`<span class="md mdn">${i+1}</span>`;};
+
+// ── 10. LIVE PRICES — BRAPI ──────────────────────────────────────
+/*
+  BRAPI: https://brapi.dev — API oficial B3, CORS liberado para browser
+  Token hardcoded abaixo — troque se precisar gerar outro em brapi.dev/dashboard
+*/
+const BRAPI_TOKEN = 'aFamsWD3eK42f9kCZPngsY';   // ← token do usuário
+
+// ── CAMADA DE DADOS CENTRALIZADA ────────────────────────────────
+// window.marketData: cache global acessível por qualquer módulo do dashboard.
+// Estrutura por ticker: { symbol, regularMarketPrice, regularMarketChangePercent,
+//                         regularMarketChange, ts }
+window.marketData = {};
+
+const PRICE_CACHE = {};          // alias interno → aponta para window.marketData
+const PRICE_TTL   = 60_000;      // 60 segundos de TTL (requisito)
+let   _liveTop5   = [];
+
+// Lista de proxies CORS — tenta cada um em sequência até funcionar
+const CORS_PROXIES = [
+  url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+  url => 'https://corsproxy.io/?' + encodeURIComponent(url),
+  url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
+];
+
+/**
+ * Monta a URL da BRAPI para um lote de tickers.
+ * O token fica na query para compatibilidade com proxies CORS (que não repassam headers).
+ * Na chamada direta, enviamos TAMBÉM o header Authorization: Bearer.
+ */
+function _brapiUrl(tickers) {
+  return `https://brapi.dev/api/quote/${tickers.join(',')}?fundamental=false&token=${BRAPI_TOKEN}`;
+}
+
+/**
+ * Detecta se o dashboard está sendo aberto via file:// (sem servidor HTTP).
+ * Nesse caso pulamos a tentativa direta e vamos direto ao proxy CORS,
+ * pois browsers bloqueiam requests cross-origin de file:// por padrão.
+ */
+const _isLocalFile = () => location.protocol === 'file:';
+
+/**
+ * Tenta buscar via proxy CORS — percorre a lista de proxies em sequência.
+ */
+async function _fetchViaProxy(url) {
+  let lastErr = null;
+  for (const mkProxy of CORS_PROXIES) {
+    const proxyUrl = mkProxy(url);
+    try {
+      console.log('[BRAPI] Tentando proxy:', proxyUrl.slice(0, 60) + '...');
+      const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(15_000) });
+      if (!r.ok) { lastErr = new Error('Proxy HTTP ' + r.status); continue; }
+      const text = await r.text();
+      // Valida se é JSON antes de retornar (alguns proxies retornam HTML de erro)
+      const data = JSON.parse(text);
+      if (data?.error) { lastErr = new Error(data.message || 'BRAPI error'); continue; }
+      return data;
+    } catch(e) {
+      console.warn('[BRAPI] Proxy falhou:', e.message);
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('Todos os proxies CORS falharam');
+}
+
+/**
+ * Realiza o fetch com estratégia adaptativa:
+ * - Se aberto via file:// → usa proxies CORS diretamente (sem tentativa direta)
+ * - Se aberto via HTTP/HTTPS → tenta direto primeiro (com header Auth), proxies como fallback
+ */
+async function _fetchWithFallback(url) {
+  // ── Modo file:// → proxy direto, sem tentativa de CORS nativa ──
+  if (_isLocalFile()) {
+    return await _fetchViaProxy(url);
+  }
+
+  // ── Modo HTTP/HTTPS → tenta direto primeiro com Authorization header ──
+  try {
+    const r = await fetch(url, {
+      signal: AbortSignal.timeout(10_000),
+      headers: { 'Authorization': 'Bearer ' + BRAPI_TOKEN }
+    });
+    if (r.ok) {
+      const data = await r.json();
+      if (data?.error) {
+        console.warn('[BRAPI] API retornou erro:', data.message);
+      } else {
+        return data;
+      }
+    }
+    console.warn('[BRAPI] HTTP direto', r.status, '— tentando proxies CORS...');
+  } catch(e) {
+    console.warn('[BRAPI] Falha direta:', e.message, '— tentando proxies CORS...');
+  }
+
+  // Fallback via lista de proxies CORS
+  return await _fetchViaProxy(url);
+}
+
+/**
+ * Persiste resultados da BRAPI em window.marketData e PRICE_CACHE.
+ * Garante que ambos estejam sempre sincronizados.
+ */
+function _persistQuotes(results, now) {
+  if (!Array.isArray(results)) return;
+  results.forEach(q => {
+    if (!q?.symbol) return;
+    const entry = {
+      symbol:                     q.symbol,
+      regularMarketPrice:         q.regularMarketPrice          ?? null,
+      regularMarketChangePercent: q.regularMarketChangePercent  ?? null,
+      regularMarketChange:        q.regularMarketChange         ?? null,
+      regularMarketPreviousClose: q.regularMarketPreviousClose  ?? null,
+      ts:  now,
+      // aliases internos para retrocompatibilidade com código existente
+      price:  q.regularMarketPrice          ?? null,
+      change: q.regularMarketChangePercent  ?? null,
+      prev:   q.regularMarketPreviousClose  ?? null,
+    };
+    window.marketData[q.symbol] = entry;
+    PRICE_CACHE[q.symbol]       = entry;
+  });
+}
+
+/**
+ * getStockData — busca preços em batch (UMA chamada por lote de até 10).
+ * Respeita TTL de 60s; tickers ainda válidos são servidos do cache.
+ */
+async function getStockData(tickers) {
+  if (!tickers || !tickers.length) return {};
+  const now   = Date.now();
+  const stale = tickers.filter(t => {
+    const c = PRICE_CACHE[t];
+    return !c || c.price == null || (now - c.ts) > PRICE_TTL;
+  });
+
+  if (stale.length > 0) {
+    // Divide em lotes de 10 (limite seguro da BRAPI)
+    const batches = [];
+    for (let i = 0; i < stale.length; i += 10) batches.push(stale.slice(i, i + 10));
+
+    await Promise.all(batches.map(async batch => {
+      try {
+        const data = await _fetchWithFallback(_brapiUrl(batch));
+        _persistQuotes(data?.results, now);
+        // Garante entrada no cache mesmo para tickers sem dado (evita re-fetch incessante)
+        batch.forEach(t => {
+          if (!PRICE_CACHE[t]) {
+            PRICE_CACHE[t] = window.marketData[t] = { symbol: t, regularMarketPrice: null,
+              regularMarketChangePercent: null, regularMarketChange: null, price: null, change: null, ts: now };
+          }
+        });
+      } catch(e) {
+        console.warn('[BRAPI] Lote falhou:', batch.join(','), e.message);
+        batch.forEach(t => {
+          if (!PRICE_CACHE[t]) {
+            PRICE_CACHE[t] = window.marketData[t] = { symbol: t, regularMarketPrice: null,
+              regularMarketChangePercent: null, regularMarketChange: null, price: null, change: null, ts: now };
+          }
+        });
+      }
+    }));
+  }
+  return Object.fromEntries(tickers.map(t => [t, PRICE_CACHE[t] || null]));
+}
+
+/**
+ * Formata preço e variação para exibição — com seta ↑/↓ e locale pt-BR.
+ * @param {Object} cache  — resultado de getStockData()
+ * @param {string} ticker
+ * @returns {string} HTML com span colorido
+ */
+const livePrice = (cache, ticker) => {
+  const d = cache[ticker];
+  if (!d || d.price == null) return '<span class="price-neu">—</span>';
+  const chg = d.change;
+  const cls   = chg > 0 ? 'price-up' : chg < 0 ? 'price-dn' : 'price-neu';
+  const arrow = chg > 0 ? '↑' : chg < 0 ? '↓' : '';
+  // Formata preço em pt-BR: R$ 32,45
+  const priceStr = d.price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const chgStr   = Math.abs(chg).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+  return `<span class="live-price ${cls}">R$ ${priceStr} ${arrow}${chgStr}%</span>`;
+};
+
+/**
+ * Atualiza elementos com IDs padronizados price-{TICKER} e change-{TICKER}.
+ * Permite que qualquer parte do HTML use esses IDs e receba o dado automaticamente.
+ */
+function _updatePriceIds(prices) {
+  Object.entries(prices).forEach(([ticker, d]) => {
+    if (!d || d.price == null) return;
+
+    // price-{TICKER}
+    const priceEl  = document.getElementById(`price-${ticker}`);
+    const changeEl = document.getElementById(`change-${ticker}`);
+
+    if (priceEl) {
+      priceEl.textContent = 'R$ ' + d.price.toLocaleString('pt-BR',
+        { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (changeEl) {
+      const chg    = d.change;
+      const arrow  = chg > 0 ? '↑' : chg < 0 ? '↓' : '';
+      const cls    = chg > 0 ? 'pos' : chg < 0 ? 'neg' : 'muted';
+      const chgStr = Math.abs(chg).toLocaleString('pt-BR',
+        { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      changeEl.className = cls;
+      changeEl.textContent = `${arrow} ${chgStr}%`;
+    }
+  });
+}
+
+/** Update API status indicator */
+const setApiStatus = (state) => {
+  const el = document.getElementById('apiStatus');
+  if (!el) return;
+  const map = {
+    ok:      { color:'#27AE60', label:'Atualizado ✔' },
+    loading: { color:'#E8681A', label:'Atualizando...' },
+    error:   { color:'#C0392B', label:'Erro ❌' },
+    idle:    { color:'#D0C8BC', label:'Aguardando' },
+  };
+  const s = map[state] || map.idle;
+  el.innerHTML = `<div style="width:6px;height:6px;border-radius:50%;background:${s.color};flex-shrink:0"></div> ${s.label}`;
+};
+
+/**
+ * refreshLivePrices — ponto de entrada público.
+ * - Chamado no carregamento da página (via init)
+ * - Chamado pelo botão Atualizar
+ * - Chamado pelo setInterval a cada 60s
+ * Faz UMA chamada para todos os tickers necessários.
+ */
+async function refreshLivePrices() {
+  const btn = document.getElementById('refreshBtn');
+  if (btn) btn.classList.add('spin');
+  setApiStatus('loading');
+
+  // Força rebusca zerando timestamps
+  Object.values(PRICE_CACHE).forEach(c => { if (c) c.ts = 0; });
+  Object.values(API_CACHE).forEach(c   => { if (c) c.ts   = 0; });
+
+  try {
+    // Coleta tickers das top ranked (ou dataset filtrado como fallback)
+    const tickers = (_allRanked.length ? _allRanked : D_FILTRADO).slice(0, 20).map(s => s.t);
+    console.log('[BRAPI] Buscando preços para', tickers.length, 'tickers:', tickers.join(', '));
+    console.log('[BRAPI] Protocolo:', location.protocol, '| Modo:', _isLocalFile() ? 'file://' : 'HTTP');
+    const prices  = await getStockData(tickers);
+
+    // 1. Atualiza top-picks hero cards
+    _liveTop5.forEach((ticker, i) => {
+      const el = document.getElementById(`top-live-${i}`);
+      if (el) el.innerHTML = livePrice(prices, ticker);
+    });
+
+    // 2. Atualiza células com data-live-price (tabelas, etc.) — com setas ↑/↓
+    document.querySelectorAll('[data-live-price]').forEach(el => {
+      const t = el.getAttribute('data-live-price');
+      const p = prices[t];
+      if (p?.price != null) {
+        const arrow  = p.change > 0 ? '↑' : p.change < 0 ? '↓' : '';
+        const cls    = p.change > 0 ? 'pos' : p.change < 0 ? 'neg' : '';
+        const priceF = p.price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const chgF   = Math.abs(p.change || 0).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+        el.innerHTML = `R$ ${priceF} <span class="${cls}">${arrow}${chgF}%</span>`;
+      }
+    });
+
+    // 3. Atualiza IDs padronizados price-{TICKER} e change-{TICKER}
+    _updatePriceIds(prices);
+
+    // 4. Atualiza painel lateral se estiver aberto
+    const detOv = document.getElementById('detOv');
+    if (detOv?.classList.contains('open')) {
+      const ticker = document.getElementById('dt-ticker')?.textContent;
+      if (ticker && prices[ticker]?.price != null) {
+        const p = prices[ticker];
+        const priceF = p.price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const raw = D_FILTRADO.find(x => x.t === ticker) || {};
+        setText('dt-price', `R$ ${priceF} · MC: ${fmtM(raw.mc)}`);
+      }
+    }
+
+    // 5. Recarrega macro BCB
+    await renderMacro();
+
+    const anyOk = Object.values(prices).some(v => v?.price != null);
+    console.log('[BRAPI] Resultado:', anyOk ? 'OK' : 'SEM DADOS', '| Preços recebidos:', Object.values(prices).filter(v=>v?.price!=null).length);
+    setText('lastUpdate', 'Atualizado: ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+    setApiStatus(anyOk ? 'ok' : 'error');
+    if (!anyOk) setText('lastUpdate', 'Sem dados — verifique token BRAPI');
+  } catch(e) {
+    console.error('[refresh] Erro completo:', e);
+    console.error('[refresh] Verifique: 1) Token BRAPI válido? 2) Internet? 3) CORS bloqueado?');
+    setApiStatus('error');
+    setText('lastUpdate', 'Erro — veja console (F12)');
+  } finally {
+    if (btn) btn.classList.remove('spin');
+  }
+}
+
+// Auto-refresh a cada 60 segundos (requisito de performance)
+let _refreshTimer = null;
+function startAutoRefresh() {
+  if (_refreshTimer) clearInterval(_refreshTimer);
+  _refreshTimer = setInterval(refreshLivePrices, 60_000);
+}
+
+// ── 11. NAVIGATION & MODALS ──────────────────────────────────────
+const rendered = {};
+
+function showTab(id, el) {
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('a'));
+  document.querySelectorAll('.nt').forEach(n=>n.classList.remove('a'));
+  document.getElementById('pg-'+id).classList.add('a');
+  el.classList.add('a');
+  if(!rendered[id]){ rendered[id]=true; ({intersecao:renderIntersecao,multiplos:renderMultiplos,dcf:renderDCF,gordon:renderGordon,graham:renderGraham,fama:renderFama,setorial:renderSetorial,macro:renderMacro}[id]||(() => {}))(); }
+}
+
+function toggleFullTable() {
+  const btn=document.getElementById('intTableToggle');
+  const tbl=document.getElementById('intTableFull');
+  const open=tbl.classList.toggle('vis');
+  btn.classList.toggle('exp',open);
+  btn.innerHTML=`<span class="ti">${open?'▲':'▼'}</span> ${open?'Ocultar análise completa':'Ver análise completa'}`;
+}
+
+function toggleMeb(btn) {
+  const body=btn.parentElement.querySelector('.meb-body');
+  const open=body.classList.toggle('open');
+  btn.querySelector('span:last-child').textContent=open?'▲':'▼';
+}
+
+function showMI(key) {
+  const m=MODEL_INFO[key]; if(!m) return;
+  setText('mi-name',m.name); setText('mi-what',m.what); setText('mi-how',m.how); setText('mi-int',m.int); setText('mi-lim',m.lim);
+  document.getElementById('miOv').classList.add('open');
+}
+function closeMI(e) { if(e===true||e?.target===document.getElementById('miOv')) document.getElementById('miOv').classList.remove('open'); }
+
+// ── 12. ASSET DETAIL PANEL ───────────────────────────────────────
+let _allRanked = [];
+
+function openDetail(ticker) {
+  const s=_allRanked.find(x=>x.t===ticker); if(!s) return;
+  const raw=D_FILTRADO.find(x=>x.t===ticker)||{};
+  const vd=genVerdict(s);
+  const f=calcFactors(raw);
+
+  setText('dt-ticker',ticker);
+  setText('dt-sector', s.sector||'—');
+
+  // Try live price
+  const lp = PRICE_CACHE[ticker];
+  const priceStr = lp?.price ? `R$ ${lp.price.toFixed(2)} · MC: ${fmtM(raw.mc)}` : `R$ ${fmt(s.p)} · MC: ${fmtM(raw.mc)}`;
+  setText('dt-price', priceStr);
+
+  const vBlock=document.getElementById('dt-verdict');
+  vBlock.className=vd.rcls+' mb';
+  setText('dt-rec-title',`Recomendação: ${vd.rec}`);
+  setHTML('dt-rec-body',vd.body);
+
+  setHTML('dt-breakdown',`
+    ${fBar('Valor (Preço)',  f.value,'#E8681A')}
+    ${fBar('Qualidade',     f.qual, '#3A4A1E')}
+    ${fBar('Crescimento',   f.grow, '#506128')}
+    ${fBar('Dividendos',    f.div,  '#7C8B3A')}
+    ${fBar('Segurança',     f.risk, '#8A7E73')}
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid #D0C8BC;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:10px;font-weight:700;color:#6B5E53">Score Final</span>
+      <span style="font-size:20px;font-weight:900;color:${scColor(s.comp)}">${fmt(s.comp,1)}</span>
+    </div>`);
+
+  const mGrid=[
+    {n:'Graham',    v:s.gUp,  suf:'% upside', thr:20},
+    {n:'DDM/Gordon',v:s.gorUp,suf:'% upside', thr:10},
+    {n:'DCF',       v:s.dUp2, suf:'% upside', thr:10},
+    {n:'Múltiplos', v:s.sM,   suf:' score',   thr:60},
+    {n:'Fama-FF',   v:s.sF,   suf:' score',   thr:65},
+  ];
+  setHTML('dt-models',mGrid.map(m=>{
+    const has=m.v!=null&&isFinite(m.v);const pos=has&&m.v>m.thr;
+    return `<div class="det-mc"><div class="dmc-name">${m.n}</div><div class="dmc-val" style="color:${has?(pos?'#27AE60':'#C0392B'):'#8A7E73'}">${has?(m.v>0?'+':'')+fmt(m.v)+m.suf:'N/D'}</div><div class="dmc-lbl">${has?(pos?'BUY':'Abaixo do limiar'):'Sem dados'}</div></div>`;
+  }).join(''));
+
+  // Mini radar chart in detail panel
+  const radarData = { Graham:s.sG||0, DDM:s.sGor||0, DCF:s.sD||0, Múltiplos:s.sM||0, 'Fama-FF':s.sF||0 };
+  Plotly.newPlot('dt-radar',[{
+    type:'scatterpolar',
+    r:Object.values(radarData),
+    theta:Object.keys(radarData),
+    fill:'toself',fillcolor:'rgba(232,104,26,0.15)',
+    line:{color:'#E8681A',width:2}
+  }],{
+    polar:{radialaxis:{visible:true,range:[0,100],gridcolor:'#D0C8BC'},bgcolor:'transparent'},
+    paper_bgcolor:'transparent',margin:{t:10,b:10,l:30,r:30},
+    font:{family:'Lato,sans-serif',size:9,color:'#6B5E53'},height:200,showlegend:false
+  },{responsive:true,displayModeBar:false});
+
+  setHTML('dt-risks',vd.risks.map(r=>`<li><span class="ricon">!</span>${r}</li>`).join(''));
+  document.getElementById('detOv').classList.add('open');
+}
+function closeDet(x){if(x===true||x?.target===document.getElementById('detOv'))document.getElementById('detOv').classList.remove('open');}
+
+// ── 13. PLOTLY CONFIG ─────────────────────────────────────────────
+const PCFG={responsive:true,displayModeBar:false};
+const pL=extra=>Object.assign({paper_bgcolor:'transparent',plot_bgcolor:'transparent',font:{family:'Lato,sans-serif',size:11,color:'#6B5E53'},margin:{t:10,b:35,l:50,r:15}},extra);
+
+// Brainvest color palette for charts
+const BV_COLORS=['#E8681A','#3A4A1E','#7C8B3A','#8A7E73','#506128','#F0965A','#D0C8BC'];
+
+// ── 14. INTERSECAO MODULE ────────────────────────────────────────
+let MUL=[],GRA=[],GOR=[],DCF_DATA=[],FAMA=[];
+
+function renderIntersecao() {
+  if(!MUL.length)      renderMultiplos();
+  if(!GRA.length)      renderGraham();
+  if(!GOR.length)      renderGordon();
+  if(!DCF_DATA.length) renderDCF();
+  if(!FAMA.length)     renderFama();
+
+  const M={};
+  const add=(t,p,sector,k,v)=>{if(!M[t])M[t]={t,p,sector};M[t][k]=v;};
+  MUL.forEach(s      =>add(s.t,s.p,s.sector,'sM',    s.scoreM));
+  GRA.forEach(s      =>add(s.t,s.p,s.sector,'gUp',   s.upside));
+  GOR.forEach(s      =>add(s.t,s.p,s.sector,'gorUp', s.upside));
+  DCF_DATA.forEach(s =>add(s.t,s.p,s.sector,'dUp2',  s.upside));
+  FAMA.forEach(s     =>add(s.t,s.p,s.sector,'sF',    s.scoreFF));
+
+  const u2s=(up,k)=>up!=null?clamp(50+up*k,0,100):undefined;
+
+  const all=Object.values(M).map(s=>{
+    const sG  =u2s(s.gUp,  0.5);
+    const sGor=u2s(s.gorUp,0.4);
+    const sD  =u2s(s.dUp2, 0.4);
+    const modelScores=[s.sM,sG,sGor,sD,s.sF].filter(v=>v!==undefined);
+    if(!modelScores.length) return null;
+    let tot=0,ct=0;
+    if(s.sM!==undefined){tot+=s.sM*0.25;ct+=0.25;}
+    if(sG!==undefined)  {tot+=sG*0.25;  ct+=0.25;}
+    if(sGor!==undefined){tot+=sGor*0.20;ct+=0.20;}
+    if(sD!==undefined)  {tot+=sD*0.20;  ct+=0.20;}
+    if(s.sF!==undefined){tot+=s.sF*0.10;ct+=0.10;}
+    const raw=ct>0?tot/ct:0;
+    const cB=convBonus(modelScores);
+    const rawData=D_FILTRADO.find(x=>x.t===s.t);
+    const riskScore=rawData?calcRiskScore(rawData):50;
+    const comp=riskAdj(raw*cB,riskScore);
+    let buys=0;
+    if(s.gUp!=null&&s.gUp>30)   buys++;
+    if(s.gorUp!=null&&s.gorUp>10)buys++;
+    if(s.dUp2!=null&&s.dUp2>10) buys++;
+    if(s.sM!=null&&s.sM>60)     buys++;
+    if(s.sF!=null&&s.sF>65)     buys++;
+    const expRet=CDI_+(comp-50)/50*15;
+    return {...s,sG,sGor,sD,comp,riskScore,convBonus:cB,buys,expRet};
+  }).filter(Boolean).sort((a,b)=>b.comp-a.comp);
+
+  _allRanked=all;
+  setText('int-top',  all.filter(s=>s.comp>=65).length);
+  setText('int-3mod', all.filter(s=>s.buys>=3).length);
+  setText('int-badge',all.length+' ações');
+  setText('nb-int',   all.filter(s=>s.comp>=65).length);
+  setText('hero-univ',all.length);
+  setText('int-univ', all.length);
+  const ar=avg(all.slice(0,10).map(s=>s.expRet));
+  setText('int-upside',ar?fmtPct(ar):'—');
+
+  renderHero(all.slice(0,5));
+  renderPortfolio(all.slice(0,5));
+  renderInsights(all);
+  renderScoreExplainers(all.slice(0,3));
+  renderBenchChart(all);
+  renderPriceVsFairChart(all.slice(0,10));
+  renderSectorAllocChart(all.slice(0,15));
+  renderRadarChart(all.slice(0,5));
+  renderCompactTable(all.slice(0,15));
+  renderMatriz(all.slice(0,20));
+
+  // Fetch live prices for top 5
+  _liveTop5 = all.slice(0,5).map(s=>s.t);
+  getStockData(all.slice(0,15).map(s=>s.t)).then(prices => {
+    _liveTop5.forEach((t,i) => {
+      const el=document.getElementById(`top-live-${i}`);
+      if(el) el.innerHTML=livePrice(prices,t);
+    });
+    setApiStatus('ok');
+    setText('lastUpdate','Atualizado: '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+  }).catch(()=>setApiStatus('error'));
+  startAutoRefresh();
+}
+
+function renderHero(top5) {
+  const ranks=['1º','2º','3º','4º','5º'];
+  const rankCls=['','rank2','rank3','rank4','rank5'];
+  setText('hero-meta',`Ke = ${fmt(KE*100)}% · CDI = ${fmt(CDI_)}%`);
+  setHTML('topPicksGrid',top5.map((s,i)=>{
+    const vsCDI=s.expRet-CDI_;
+    const conv=s.buys>=4?'Alta':s.buys>=3?'Média':'Baixa';
+    const convCls=s.buys>=4?'tcA':s.buys>=3?'tcM':'tcB';
+    const rec=s.comp>=65&&s.buys>=3?'Compra Forte':s.comp>=55?'Compra':'Neutro';
+    const recCls=s.comp>=65&&s.buys>=3?'rc':s.comp>=55?'ro':'rn';
+    const raw=D_FILTRADO.find(x=>x.t===s.t)||{};
+    let brief=raw.dy&&raw.dy>10?`DY ${fmt(raw.dy)}% > CDI`:raw.pvp&&raw.pvp<1?`P/VP ${fmt(raw.pvp)}x (abaixo do pat.)`:raw.pl&&raw.pl<9?`P/L ${fmt(raw.pl)}x (desconto histórico)`:`${s.buys}/5 modelos sinalizam buy.`;
+    return `<div class="top-card ${rankCls[i]}" onclick="openDetail('${s.t}')">
+      <div class="top-rank">${ranks[i]} lugar</div>
+      <div class="top-ticker">${s.t}</div>
+      <div class="top-live-price" id="top-live-${i}">—</div>
+      <div class="top-sector">${s.sector||'—'}</div>
+      <div class="top-rec ${recCls}">${rec}</div>
+      <div class="top-metrics">
+        <div><div class="top-ml">Score</div><div class="top-mv">${fmt(s.comp,1)}</div></div>
+        <div><div class="top-ml">Risco</div><div class="top-mv">${fmt(s.riskScore,0)}</div></div>
+        <div><div class="top-ml">Ret. Esp.</div><div class="top-mv up">${fmt(s.expRet,1)}%</div></div>
+        <div><div class="top-ml">vs CDI</div><div class="top-mv ${vsCDI>0?'up':'dn'}">${vsCDI>0?'+':''}${fmt(vsCDI,1)}pp</div></div>
+      </div>
+      <span class="top-conv ${convCls}">Convicção ${conv}</span>
+      <div class="top-brief">${brief} Toque para análise.</div>
+    </div>`;
+  }).join(''));
+}
+
+function renderPortfolio(top5) {
+  const total=top5.reduce((s,x)=>s+x.comp,0);
+  setHTML('portfolioGrid',top5.map(s=>{
+    const pct=Math.round(s.comp/total*100);
+    const raw=D_FILTRADO.find(x=>x.t===s.t)||{};
+    const rat=raw.dy&&raw.dy>10?`DY ${fmt(raw.dy)}% — acima do CDI`:raw.pl&&raw.pl<10?`P/L ${fmt(raw.pl)}x — desconto vs. histórico`:`ROE ${fmt(raw.roe)}% · ${s.buys}/5 modelos buy`;
+    return `<div class="port-row">
+      <div><div class="port-ticker">${s.t}</div><div class="port-sector">${s.sector||'—'}</div></div>
+      <div><div class="bt" style="height:7px"><div class="bf" style="width:${Math.min(100,pct*2)}%;background:var(--o)"></div></div></div>
+      <div class="port-pct">${pct}%</div>
+      <div class="port-rat">${rat}</div>
+    </div>`;
+  }).join(''));
+}
+
+function renderInsights(all) {
+  const top3=all.slice(0,3).map(s=>s.t).join(', ');
+  const altaConv=all.filter(s=>s.comp>=65).length;
+  const med=avg(all.slice(0,10).map(s=>s.expRet-CDI_));
+  const topSec=Object.entries(all.slice(0,15).reduce((c,s)=>{c[s.sector]=(c[s.sector]||0)+1;return c;},{}))[0]?.[0]||'—';
+  const hiRisk=all.filter(s=>s.riskScore<40).length;
+  setHTML('insightsGrid',[
+    {cls:'',  t:`${altaConv} ações com alta convicção — modelos convergem`, b:`Os modelos identificaram <strong>${altaConv}</strong> ações com score acima de 65. As 3 principais: <strong>${top3}</strong>. Convergência de múltiplos modelos independentes valida a tese.`},
+    {cls:'ig',t:`Prêmio médio de +${fmt(med,1)}pp acima do CDI (Top 10)`, b:`Top 10 entrega retorno esperado médio de <strong>${fmt(CDI_+(med||0),1)}%</strong> a.a. — <strong>+${fmt(med,1)}pp</strong> acima do CDI (${fmt(CDI_)}%). Score penaliza empresas com risco elevado.`},
+    {cls:'iy',t:`Setor com mais oportunidades: ${topSec}`, b:`O setor <strong>${topSec}</strong> concentra o maior número de ações no Top 15. Atenção à concentração setorial ao montar a carteira — diversifique para reduzir risco.`},
+    {cls:hiRisk>4?'ir':'iy',t:`${hiRisk} ação(ões) penalizada(s) por risco elevado`, b:`<strong>${hiRisk}</strong> ações têm Risk Score abaixo de 40 (alta alavancagem, margem negativa ou ROE fraco). O modelo as penaliza automaticamente mesmo com upside aparente.`},
+  ].map(c=>`<div class="ig-card ${c.cls}"><div class="ic-title">${c.t}</div><div class="ic-body">${c.b}</div></div>`).join(''));
+}
+
+function renderScoreExplainers(top3) {
+  const FL=[['Valor','#E8681A'],['Qualidade','#3A4A1E'],['Crescimento','#506128'],['Dividendos','#7C8B3A'],['Segurança','#8A7E73']];
+  const FK=['value','qual','grow','div','risk'];
+  setHTML('scoreExplainerGrid',top3.map((s,i)=>{
+    const raw=D_FILTRADO.find(x=>x.t===s.t)||{};
+    const f=calcFactors(raw);
+    const vsCDI=s.expRet-CDI_;
+    return `<div class="card" style="cursor:pointer" onclick="openDetail('${s.t}')">
+      <div class="card-hdr">
+        <div><div class="card-title" style="font-size:15px;font-weight:900;font-style:normal">${s.t}</div><div style="font-size:10px;color:var(--ts)">${s.sector||'—'} · R$ ${fmt(s.p)}</div></div>
+        <div style="text-align:right"><div style="font-size:22px;font-weight:900;color:${scColor(s.comp)}">${fmt(s.comp,1)}</div><div style="font-size:9px;color:var(--ts)">Score</div></div>
+      </div>
+      <div class="sc-exp">${FK.map((k,j)=>fBar(FL[j][0],f[k],FL[j][1])).join('')}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid var(--gym)">
+        <span style="font-size:10px;color:var(--ts)">${s.buys}/5 modelos: BUY</span>
+        <span style="font-size:12px;font-weight:700;color:#27AE60">${fmt(s.expRet,1)}% (+${fmt(vsCDI,1)}pp vs CDI)</span>
+      </div>
+    </div>`;
+  }).join(''));
+}
+
+/** NEW: Price vs Fair Value chart (Graham) */
+function renderPriceVsFairChart(top10) {
+  const hasGraham=top10.filter(s=>s.gUp!=null).slice(0,8);
+  if(!hasGraham.length){Plotly.newPlot('priceVsFairChart',[],pL({height:210}),PCFG);return;}
+  const tickers=hasGraham.map(s=>s.t);
+  const prices =hasGraham.map(s=>{ const raw=D_FILTRADO.find(x=>x.t===s.t)||{}; const lp=PRICE_CACHE[s.t]; return lp?.price||s.p; });
+  const fairs  =GRA.filter(g=>tickers.includes(g.t)).map(g=>g.j);
+  const tikFil =GRA.filter(g=>tickers.includes(g.t)).map(g=>g.t);
+  const prFil  =tikFil.map(t=>{ const lp=PRICE_CACHE[t]; const s=hasGraham.find(x=>x.t===t)||{}; return lp?.price||s.p; });
+
+  Plotly.newPlot('priceVsFairChart',[
+    {type:'bar',name:'Preço Atual',x:tikFil,y:prFil,marker:{color:'#E8681A'},hovertemplate:'<b>%{x}</b><br>Preço: R$%{y:.2f}<extra></extra>'},
+    {type:'bar',name:'Preço Justo (Graham)',x:tikFil,y:fairs,marker:{color:'#3A4A1E'},hovertemplate:'<b>%{x}</b><br>Justo: R$%{y:.2f}<extra></extra>'},
+  ],pL({height:215,barmode:'group',yaxis:{tickprefix:'R$',gridcolor:'#D0C8BC'},margin:{t:5,b:40,l:60,r:10},legend:{orientation:'h',y:-0.32,font:{size:10}},colorway:BV_COLORS}),PCFG);
+}
+
+/** NEW: Sector allocation chart (pie/donut) */
+function renderSectorAllocChart(top15) {
+  const cnt={};
+  top15.forEach(s=>{ cnt[s.sector]=(cnt[s.sector]||0)+1; });
+  const sorted=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
+  Plotly.newPlot('sectorAllocChart',[{
+    type:'pie',labels:sorted.map(x=>x[0]),values:sorted.map(x=>x[1]),
+    hole:0.45,
+    marker:{colors:['#E8681A','#3A4A1E','#7C8B3A','#8A7E73','#506128','#F0965A','#D0C8BC','#2A2218','#4A3F35','#6B5E53']},
+    textfont:{family:'Lato,sans-serif',size:10},
+    hovertemplate:'<b>%{label}</b><br>%{value} ações (%{percent})<extra></extra>',
+  }],{...pL({height:215}),showlegend:true,legend:{orientation:'v',x:1,y:0.5,font:{size:9}},margin:{t:5,b:5,l:5,r:120}},PCFG);
+}
+
+/** Compact table — 5 columns by default */
+function renderCompactTable(data) {
+  let html=`<table><thead><tr><th>#</th><th>Ativo</th><th>Setor</th><th>Score</th><th>Ret. Esp.</th><th>vs CDI</th><th>Risco</th><th>Modelos</th><th>Decisão</th></tr></thead><tbody>`;
+  data.forEach((s,i)=>{
+    const vsCDI=s.expRet-CDI_;
+    html+=`<tr onclick="openDetail('${s.t}')">
+      <td>${medal(i)}</td>
+      <td><strong>${s.t}</strong> <span data-live-price="${s.t}" style="font-size:9px;color:var(--ts)">—</span></td>
+      <td><span class="sec-bd">${s.sector||'—'}</span></td>
+      <td>${pBar(s.comp,100,scColor(s.comp))}</td>
+      <td class="tr pos"><strong>${fmt(s.expRet,1)}%</strong></td>
+      <td class="tr ${vsCDI>0?'pos':'neg'}">${vsCDI>0?'+':''}${fmt(vsCDI,1)}pp</td>
+      <td>${pBar(s.riskScore,100,scColor(s.riskScore))}</td>
+      <td class="tc"><span class="pill ${s.buys>=4?'pill-buy':s.buys>=3?'pill-o':s.buys>=2?'pill-hold':'pill-sell'}">${s.buys}/5</span></td>
+      <td>${verdict(s.comp-50)}</td>
+    </tr>`;
+  });
+  setHTML('intTableCompact',html+'</tbody></table>');
+}
+
+/** Full matrix */
+function renderMatriz(data) {
+  const cT=(v,thr)=>v!=null&&v>thr?'<span class="pill pill-buy">BUY</span>':v!=null?'<span class="pill pill-sell">—</span>':'<span class="pill pill-neu">N/D</span>';
+  let html=`<table><thead><tr><th>Ativo</th><th>Setor</th><th>Score</th><th>Risco</th><th>Conv.</th><th>Graham</th><th>DDM</th><th>DCF</th><th>Múltiplos</th><th>Fama-FF</th><th>Consenso</th><th>Ret. Esp.</th></tr></thead><tbody>`;
+  data.forEach((s,i)=>{
+    const bars='■'.repeat(s.buys)+'□'.repeat(5-s.buys);
+    html+=`<tr onclick="openDetail('${s.t}')">
+      <td>${medal(i)} <strong>${s.t}</strong></td>
+      <td><span class="sec-bd">${s.sector||'—'}</span></td>
+      <td>${pBar(s.comp,100,scColor(s.comp))}</td>
+      <td>${pBar(s.riskScore,100,scColor(s.riskScore))}</td>
+      <td class="tc" style="font-size:11px;color:${scColor(s.convBonus*100)}">${fmt(s.convBonus*100,0)}%</td>
+      <td class="tc">${cT(s.gUp,  30)}</td>
+      <td class="tc">${cT(s.gorUp,10)}</td>
+      <td class="tc">${cT(s.dUp2, 10)}</td>
+      <td class="tc">${cT(s.sM,  60)}</td>
+      <td class="tc">${cT(s.sF,  65)}</td>
+      <td class="tc" style="font-family:monospace;font-size:13px;letter-spacing:2px;color:${scColor(s.comp)}">${bars}</td>
+      <td class="tr pos"><strong>${fmt(s.expRet,1)}%</strong></td>
+    </tr>`;
+  });
+  setHTML('matrizTable',html+'</tbody></table>');
+}
+
+function renderBenchChart(all) {
+  const top5=all.slice(0,5);
+  Plotly.newPlot('intBenchChart',[
+    {type:'bar',name:'Benchmarks',x:['CDI','IBOV Est.','IDIV','SMLL'],y:[CDI_,12,14,15],marker:{color:['#D0C8BC','#8A7E73','#7C8B3A','#506128']},text:[CDI_,12,14,15].map(v=>v.toFixed(1)+'%'),textposition:'outside'},
+    {type:'bar',name:'Top 5 Ações',x:top5.map(s=>s.t),y:top5.map(s=>s.expRet),marker:{color:'#E8681A'},text:top5.map(s=>s.expRet.toFixed(1)+'%'),textposition:'outside'},
+  ],pL({height:215,barmode:'group',yaxis:{ticksuffix:'%',gridcolor:'#D0C8BC'},margin:{t:5,b:40,l:45,r:10},legend:{orientation:'h',y:-0.35,font:{size:10}}}),PCFG);
+}
+
+function renderRadarChart(top5) {
+  const lbls=['Graham','DDM','DCF','Múltiplos','Fama-FF'];
+  Plotly.newPlot('intRadar',top5.map((s,i)=>({
+    type:'scatterpolar',r:[s.sG||0,s.sGor||0,s.sD||0,s.sM||0,s.sF||0],
+    theta:lbls,fill:'toself',name:s.t,
+    line:{color:BV_COLORS[i],width:1.5},opacity:0.75
+  })),{polar:{radialaxis:{visible:true,range:[0,100],gridcolor:'#D0C8BC'},bgcolor:'transparent'},paper_bgcolor:'transparent',margin:{t:10,b:10,l:30,r:30},font:{family:'Lato,sans-serif',size:9,color:'#6B5E53'},height:215,legend:{orientation:'h',y:-0.2,font:{size:9}}},PCFG);
+}
+
+// ── 15. MULTIPLOS MODULE ─────────────────────────────────────────
+let MUL_SEC='Todos';
+
+function renderMultiplos() {
+  MUL=D_FILTRADO.filter(s=>s.p>0).map(s=>{
+    let pts=0,ct=0;
+    if(s.pl&&s.pl>0&&s.pl<80)  {pts+=Math.max(0,Math.min(30,(15-s.pl)/15*30));ct++;}
+    if(s.pvp&&s.pvp>0&&s.pvp<15){pts+=Math.max(0,Math.min(20,(2.5-s.pvp)/2.5*20));ct++;}
+    if(s.ev&&s.ev>0&&s.ev<50)  {pts+=Math.max(0,Math.min(15,(12-s.ev)/12*15));ct++;}
+    if(s.roe&&s.roe>0){pts+=Math.min(25,s.roe*0.8);ct++;}
+    if(s.dy&&s.dy>0) {pts+=Math.min(15,s.dy*1.2);ct++;}
+    if(s.roi&&s.roi>0){pts+=Math.min(15,s.roi*0.6);ct++;}
+    if(s.ml&&s.ml>0) {pts+=Math.min(12,s.ml*0.5);ct++;}
+    const raw=ct>0?Math.min(100,pts/ct*2.5):0;
+    const risk=calcRiskScore(s);
+    return{...s,sector:sec(s.t),scoreM:riskAdj(raw,risk),riskScore:risk};
+  }).sort((a,b)=>b.scoreM-a.scoreM);
+  const pls=D_FILTRADO.map(s=>s.pl).filter(x=>x&&x>0&&x<80);
+  const roes=D_FILTRADO.map(s=>s.roe).filter(x=>x&&x>0);
+  const dys=D_FILTRADO.map(s=>s.dy).filter(x=>x&&x>0);
+  setText('mul-buy',  MUL.filter(s=>s.scoreM>=65).length);
+  setText('mul-roemd',fmtPct(median(roes)));
+  setText('mul-plmd', fmt(median(pls))+'x');
+  setText('mul-dymd', fmtPct(median(dys)));
+  setText('nb-mul',   MUL.filter(s=>s.scoreM>=65).length);
+  setText('mul-badge',MUL.length+' ações');
+  renderMulTable();
+}
+
+function filterMul(st,btn){MUL_SEC=st;document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('fa'));btn.classList.add('fa');renderMulTable();}
+
+function renderMulTable() {
+  if(!MUL.length) return;
+  const q=(document.getElementById('mulSearch')?.value||'').toUpperCase();
+  let data=MUL;
+  if(MUL_SEC!=='Todos') data=data.filter(s=>s.sector===MUL_SEC);
+  if(q) data=data.filter(s=>s.t.includes(q));
+  setText('mul-badge',data.length+' ações');
+  let html=`<table><thead><tr><th>#</th><th>Ativo</th><th>Setor</th><th>Score</th><th>Risco</th><th>Preço</th>
+    <th><span class="tip">P/L<span class="tip-box"><div class="tip-title">P/L (Preço/Lucro)</div><div class="tip-body">Quantos anos de lucro você paga pela ação hoje.</div><div class="tip-int">Ibovespa histórico: ~12x. Abaixo de 10x = desconto relevante.</div></span></span></th>
+    <th><span class="tip">P/VP<span class="tip-box"><div class="tip-title">P/VP (Preço/Valor Patrimonial)</div><div class="tip-body">Preço vs. patrimônio líquido da empresa. P/VP &lt; 1 = você compra a empresa por menos que seu valor contábil.</div><div class="tip-int">P/VP &lt; 1x = potencial valor. P/VP &gt; 3x = prêmio elevado.</div></span></span></th>
+    <th><span class="tip">EV/EBIT<span class="tip-box"><div class="tip-title">EV/EBIT</div><div class="tip-body">Valor da empresa (dívida + market cap) dividido pelo lucro operacional. Ignora impostos e depreciação.</div><div class="tip-int">EV/EBIT &lt; 8x = barato. &gt; 15x = caro.</div></span></span></th>
+    <th><span class="tip">ROE<span class="tip-box"><div class="tip-title">ROE (Return on Equity)</div><div class="tip-body">Lucro líquido / patrimônio líquido. Mede quanto a empresa gera por real investido pelos acionistas.</div><div class="tip-int">ROE &gt; Ke (${fmt(KE*100)}%) = empresa criando valor acima do custo de capital.</div></span></span></th>
+    <th>ROIC%</th><th>DY%</th><th>Margem%</th><th>MC</th><th>Valor</th><th>Decisão</th></tr></thead><tbody>`;
+  data.slice(0,60).forEach((s,i)=>{
+    const gAss=GRA.find(g=>g.t===s.t);
+    html+=`<tr onclick="openDetail('${s.t}')">
+      <td>${medal(i)}</td>
+      <td><strong>${s.t}</strong></td>
+      <td><span class="sec-bd">${s.sector}</span></td>
+      <td>${pBar(s.scoreM,100,scColor(s.scoreM))}</td>
+      <td>${pBar(s.riskScore,100,scColor(s.riskScore))}</td>
+      <td class="tr">R$${fmt(s.p)}</td>
+      <td class="tr ${s.pl&&s.pl<10?'pos':s.pl&&s.pl>25?'neg':''}">${s.pl&&s.pl>0?fmt(s.pl)+'x':'—'}</td>
+      <td class="tr ${s.pvp&&s.pvp<1?'pos':s.pvp&&s.pvp>3?'neg':''}">${s.pvp&&s.pvp>0?fmt(s.pvp)+'x':'—'}</td>
+      <td class="tr">${s.ev&&s.ev>0&&s.ev<100?fmt(s.ev)+'x':'—'}</td>
+      <td class="tr ${s.roe&&s.roe>15?'pos':s.roe&&s.roe<5?'neg':''}">${fmtPct(s.roe)}</td>
+      <td class="tr ${s.roi&&s.roi>15?'pos':''}">${fmtPct(s.roi)}</td>
+      <td class="tr ${s.dy&&s.dy>8?'pos':''}">${fmtPct(s.dy)}</td>
+      <td class="tr ${s.ml&&s.ml>15?'pos':s.ml&&s.ml<0?'neg':''}">${fmtPct(s.ml)}</td>
+      <td class="tr">${fmtM(s.mc)}</td>
+      <td class="tc">${gAss?valBadge(s.p,gAss.j):''}</td>
+      <td>${verdict(s.scoreM-50)}</td>
+    </tr>`;
+  });
+  setHTML('mulTable',html+'</tbody></table>');
+}
+
+// ── 16. DCF MODULE ───────────────────────────────────────────────
+function renderDCF() {
+  DCF_DATA=D_FILTRADO.filter(s=>s.lpa&&s.lpa>0&&s.p>0&&s.cl!=null).map(s=>{
+    const g=clamp(s.cl/100,-0.05,0.25);
+    let pv=0,lpa=s.lpa;
+    for(let t=1;t<=5;t++){lpa*=(1+g);pv+=lpa/Math.pow(1+KE,t);}
+    const tv=lpa*(1+GT)/(KE-GT)/Math.pow(1+KE,5);
+    const intr=pv+tv;
+    if(intr<=0||intr>s.p*25) return null;
+    const upside=(intr-s.p)/s.p*100;
+    return{...s,intrinsic:intr,upside,gUsed:g*100,riskScore:calcRiskScore(s),sector:sec(s.t)};
+  }).filter(Boolean).sort((a,b)=>b.upside-a.upside);
+  const buy=DCF_DATA.filter(s=>s.upside>0);
+  setText('dcf-eleg',  DCF_DATA.length);
+  setText('dcf-buy',   buy.length);
+  setText('dcf-over',  DCF_DATA.filter(s=>s.upside<-20).length);
+  setText('dcf-upsmed',buy.length?fmtPct(avg(buy.map(s=>s.upside))):'—');
+  setText('dcf-badge', DCF_DATA.length+' elegíveis');
+  setText('nb-dcf',    buy.length);
+  let html=`<table><thead><tr><th>#</th><th>Ativo</th><th>Setor</th><th>Preço Atual</th><th>Valor DCF</th><th>Upside</th><th>Valor</th><th>CAGR Lucros</th><th>g proj.</th><th>ROE%</th><th>Risco</th><th>Decisão</th></tr></thead><tbody>`;
+  DCF_DATA.slice(0,50).forEach((s,i)=>{
+    html+=`<tr onclick="openDetail('${s.t}')">
+      <td>${medal(i)}</td><td><strong>${s.t}</strong></td><td><span class="sec-bd">${s.sector}</span></td>
+      <td class="tr">R$${fmt(s.p)}</td>
+      <td class="tr"><strong class="${s.upside>0?'pos':'neg'}">R$${fmt(s.intrinsic)}</strong></td>
+      <td class="tr ${s.upside>0?'pos':'neg'}">${s.upside>0?'+':''}${fmt(s.upside)}%</td>
+      <td class="tc">${valBadge(s.p,s.intrinsic)}</td>
+      <td class="tr ${s.cl>15?'pos':s.cl<0?'neg':''}">${fmtPct(s.cl)}</td>
+      <td class="tr">${fmt(s.gUsed)}%</td>
+      <td class="tr ${s.roe&&s.roe>15?'pos':''}">${fmtPct(s.roe)}</td>
+      <td>${pBar(s.riskScore,100,scColor(s.riskScore))}</td>
+      <td>${verdict(s.upside)}</td>
+    </tr>`;
+  });
+  setHTML('dcfTable',html+'</tbody></table>');
+
+  // Heatmap sensitivity
+  const kes=[0.17,0.18,0.19,0.20,0.21,0.22,0.23];
+  const gts=[0.04,0.05,0.06,0.07,0.08];
+  const base=DCF_DATA[0];
+  if(base){
+    const z=kes.map(k=>gts.map(gt=>{
+      const g=clamp((base.cl||10)/100,-0.05,0.25);
+      let pv=0,lpa=base.lpa;
+      for(let t=1;t<=5;t++){lpa*=(1+g);pv+=lpa/Math.pow(1+k,t);}
+      return parseFloat(((pv+lpa*(1+gt)/(k-gt)/Math.pow(1+k,5))/base.intrinsic).toFixed(2));
+    }));
+    Plotly.newPlot('dcfSens',[{type:'heatmap',z,
+      x:gts.map(g=>'g='+fmt(g*100)+'%'),y:kes.map(k=>'Ke='+fmt(k*100)+'%'),
+      colorscale:[[0,'#FBE8E8'],[0.5,'#FDFAF6'],[1,'#E8F8EE']],
+      text:z.map(r=>r.map(v=>v.toFixed(2)+'x')),texttemplate:'%{text}',
+      hovertemplate:'Ke=%{y}, g=%{x}<br>Fator: %{z:.2f}x<extra></extra>',showscale:true}],
+      pL({height:255,margin:{t:10,b:55,l:75,r:20}}),PCFG);
+  }
+}
+
+// ── 17. GORDON MODULE ────────────────────────────────────────────
+function renderGordon() {
+  GOR=D_FILTRADO.filter(s=>s.dy&&s.dy>0&&s.p>0&&s.lpa&&s.lpa>0&&s.roe&&s.roe>0).map(s=>{
+    const payout=clamp((s.dy/100*s.p)/s.lpa,0.1,0.95);
+    const g=clamp(s.roe/100*(1-payout),0.01,0.18);
+    if(g>=KE) return null;
+    const d1=s.lpa*payout*(1+g);
+    const val=d1/(KE-g);
+    const upside=(val-s.p)/s.p*100;
+    return{...s,payout:payout*100,g:g*100,d1,val,upside,riskScore:calcRiskScore(s),sector:sec(s.t)};
+  }).filter(Boolean).sort((a,b)=>b.upside-a.upside);
+  setText('gor-eleg', GOR.length);
+  setText('gor-buy',  GOR.filter(s=>s.upside>0).length);
+  setText('gor-over', GOR.filter(s=>s.upside<-20).length);
+  setText('gor-badge',GOR.length+' elegíveis');
+  setText('nb-gor',   GOR.filter(s=>s.upside>10).length);
+  let html=`<table><thead><tr><th>#</th><th>Ativo</th><th>Setor</th><th>Preço Atual</th><th>Valor Gordon</th><th>Upside</th><th>Valor</th><th>Payout</th><th>g sust.</th><th>Próx. Div.</th><th>ROE%</th><th>DY%</th><th>Risco</th><th>Decisão</th></tr></thead><tbody>`;
+  GOR.slice(0,50).forEach((s,i)=>{
+    html+=`<tr onclick="openDetail('${s.t}')">
+      <td>${medal(i)}</td><td><strong>${s.t}</strong></td><td><span class="sec-bd">${s.sector}</span></td>
+      <td class="tr">R$${fmt(s.p)}</td>
+      <td class="tr"><strong class="${s.upside>0?'pos':'neg'}">R$${fmt(s.val)}</strong></td>
+      <td class="tr ${s.upside>0?'pos':'neg'}">${s.upside>0?'+':''}${fmt(s.upside)}%</td>
+      <td class="tc">${valBadge(s.p,s.val)}</td>
+      <td class="tr">${fmt(s.payout)}%</td><td class="tr">${fmt(s.g)}%</td>
+      <td class="tr">R$${fmt(s.d1,3)}</td>
+      <td class="tr ${s.roe>15?'pos':''}">${fmtPct(s.roe)}</td>
+      <td class="tr ${s.dy>8?'pos':''}">${fmtPct(s.dy)}</td>
+      <td>${pBar(s.riskScore,100,scColor(s.riskScore))}</td>
+      <td>${verdict(s.upside)}</td>
+    </tr>`;
+  });
+  setHTML('gordonTable',html+'</tbody></table>');
+}
+
+// ── 18. GRAHAM MODULE ────────────────────────────────────────────
+function renderGraham() {
+  GRA=D_FILTRADO.filter(s=>s.lpa&&s.lpa>0&&s.vpa&&s.vpa>0&&s.p>0).map(s=>{
+    const j=Math.sqrt(22.5*s.lpa*s.vpa);
+    const upside=(j-s.p)/s.p*100;
+    return{...s,j,upside,riskScore:calcRiskScore(s),sector:sec(s.t)};
+  }).sort((a,b)=>b.upside-a.upside);
+  const buy=GRA.filter(s=>s.upside>30);
+  setText('g-eleg',   GRA.length);setText('g-buy',buy.length);
+  setText('g-over',   GRA.filter(s=>s.upside<0).length);
+  setText('g-descmed',buy.length?fmtPct(avg(buy.map(s=>s.upside))):'—');
+  setText('g-badge',  GRA.length+' elegíveis');setText('nb-gra',buy.length);
+  const df=D_FILTRADO;
+  setText('gc1',df.filter(s=>s.pl&&s.pl>0&&s.pl<=15).length);
+  setText('gc2',df.filter(s=>s.pvp&&s.pvp>0&&s.pvp<=1.5).length);
+  setText('gc3',df.filter(s=>s.pl&&s.pvp&&s.pl>0&&s.pvp>0&&s.pl*s.pvp<=22.5).length);
+  setText('gc4',df.filter(s=>s.dy&&s.dy>=5).length);
+  setText('gc5',df.filter(s=>s.lpa&&s.lpa>0).length);
+  setText('gc6',df.filter(s=>s.dp!=null&&s.dp<=1).length);
+  setText('gc7',df.filter(s=>s.pl&&s.pvp&&s.dy&&s.lpa&&s.dp!=null&&s.pl>0&&s.pl<=15&&s.pvp>0&&s.pvp<=1.5&&s.dy>=5&&s.lpa>0&&s.dp<=1).length);
+  let html=`<table><thead><tr><th>#</th><th>Ativo</th><th>Setor</th><th>Preço Atual</th><th>Preço Justo</th><th>Upside</th><th>Margem Seg.</th><th>LPA</th><th>VPA</th><th>P/L</th><th>P/VP</th><th>DY%</th><th>Risco</th><th>Decisão</th></tr></thead><tbody>`;
+  GRA.slice(0,50).forEach((s,i)=>{
+    const ms=s.upside;
+    const msTag=ms>30?'<span class="badge-cheap">Forte ≥30%</span>':ms>10?'<span class="badge-attr">Fraca 10–30%</span>':ms>0?'<span class="badge-fair">Mínima</span>':'<span class="badge-exp">Negativa</span>';
+    html+=`<tr onclick="openDetail('${s.t}')">
+      <td>${medal(i)}</td><td><strong>${s.t}</strong></td><td><span class="sec-bd">${s.sector}</span></td>
+      <td class="tr">R$${fmt(s.p)}</td>
+      <td class="tr"><strong class="${ms>0?'pos':'neg'}">R$${fmt(s.j)}</strong></td>
+      <td class="tr ${ms>0?'pos':'neg'}">${ms>0?'+':''}${fmt(ms)}%</td>
+      <td class="tc">${msTag}</td>
+      <td class="tr">${fmt(s.lpa)}</td><td class="tr">${fmt(s.vpa)}</td>
+      <td class="tr ${s.pl&&s.pl<12?'pos':s.pl&&s.pl>20?'neg':''}">${s.pl&&s.pl>0?fmt(s.pl)+'x':'—'}</td>
+      <td class="tr ${s.pvp&&s.pvp<1.5?'pos':''}">${s.pvp&&s.pvp>0?fmt(s.pvp)+'x':'—'}</td>
+      <td class="tr ${s.dy&&s.dy>7?'pos':''}">${fmtPct(s.dy)}</td>
+      <td>${pBar(s.riskScore,100,scColor(s.riskScore))}</td>
+      <td>${verdict(ms)}</td>
+    </tr>`;
+  });
+  setHTML('grahamTable',html+'</tbody></table>');
+  const bins={'>50%':0,'30–50%':0,'10–30%':0,'0–10%':0,'–10–0%':0,'<–10%':0};
+  GRA.forEach(s=>{
+    if(s.upside>50)bins['>50%']++;
+    else if(s.upside>30)bins['30–50%']++;
+    else if(s.upside>10)bins['10–30%']++;
+    else if(s.upside>0)bins['0–10%']++;
+    else if(s.upside>-10)bins['–10–0%']++;
+    else bins['<–10%']++;
+  });
+  Plotly.newPlot('grahamHist',[{type:'bar',x:Object.keys(bins),y:Object.values(bins),
+    marker:{color:['#27AE60','#7C8B3A','#F0965A','#E8681A','#D4884A','#C0392B']},
+    text:Object.values(bins),textposition:'outside',hovertemplate:'%{x}: %{y} ações<extra></extra>'}],
+    pL({height:190,yaxis:{gridcolor:'#D0C8BC'},margin:{t:5,b:40,l:35,r:10}}),PCFG);
+}
+
+// ── 19. FAMA MODULE ──────────────────────────────────────────────
+function renderFama() {
+  FAMA=D_FILTRADO.filter(s=>s.p>0).map(s=>{
+    let hml=s.pvp&&s.pvp>0?clamp((3-s.pvp)/3*100,0,100):50;
+    let rmw=50;
+    if(s.roe)rmw+=s.roe>25?28:s.roe>15?18:s.roe>8?8:-10;
+    if(s.ml) rmw+=s.ml>20?14:s.ml>10?7:s.ml>0?2:-8;
+    if(s.roi)rmw+=s.roi>20?8:s.roi>10?4:0;
+    rmw=clamp(rmw,0,100);
+    let smb=50; if(s.mc){const l=Math.log10(s.mc);smb=clamp((12.5-l)/(12.5-8)*100,0,100);}
+    let mom=50;
+    if(s.cl!=null)     mom=clamp(50+s.cl*1.8,0,100);
+    else if(s.cr!=null)mom=clamp(50+s.cr*0.9,0,100);
+    let cma=50;
+    if(s.dy&&s.dy>0) cma=Math.min(100,cma+s.dy*2.2);
+    if(s.dp!=null)   cma+=s.dp<2?12:s.dp<4?4:-4;
+    cma=clamp(cma,0,100);
+    const scoreFF=hml*0.30+rmw*0.25+mom*0.20+smb*0.15+cma*0.10;
+    return{...s,hml,rmw,smb,mom,cma,scoreFF,riskScore:calcRiskScore(s),sector:sec(s.t)};
+  }).sort((a,b)=>b.scoreFF-a.scoreFF);
+  setText('ff-hml',   FAMA.filter(s=>s.hml>60).length);
+  setText('ff-smb',   FAMA.filter(s=>s.smb>60).length);
+  setText('ff-rmw',   FAMA.filter(s=>s.rmw>60).length);
+  setText('ff-mom',   FAMA.filter(s=>s.mom>60).length);
+  setText('ff-strong',FAMA.filter(s=>s.scoreFF>=65).length);
+  setText('ff-badge', FAMA.length+' ações');
+  setText('nb-ff',    FAMA.filter(s=>s.scoreFF>=65).length);
+  let html=`<table><thead><tr><th>#</th><th>Ativo</th><th>Setor</th><th>Score Total</th><th>HML (Valor)</th><th>RMW (Qualidade)</th><th>SMB (Tamanho)</th><th>Momentum</th><th>CMA (Conserv.)</th><th>P/VP</th><th>ROE%</th><th>Decisão</th></tr></thead><tbody>`;
+  FAMA.slice(0,50).forEach((s,i)=>{
+    html+=`<tr onclick="openDetail('${s.t}')">
+      <td>${medal(i)}</td><td><strong>${s.t}</strong></td><td><span class="sec-bd">${s.sector}</span></td>
+      <td>${pBar(s.scoreFF,100,scColor(s.scoreFF))}</td>
+      <td>${pBar(s.hml,100,'#E8681A')}</td>
+      <td>${pBar(s.rmw,100,'#3A4A1E')}</td>
+      <td>${pBar(s.smb,100,'#8A7E73')}</td>
+      <td>${pBar(s.mom,100,'#506128')}</td>
+      <td>${pBar(s.cma,100,'#7C8B3A')}</td>
+      <td class="tr ${s.pvp&&s.pvp<1?'pos':s.pvp&&s.pvp>3?'neg':''}">${s.pvp&&s.pvp>0?fmt(s.pvp)+'x':'—'}</td>
+      <td class="tr ${s.roe&&s.roe>15?'pos':''}">${fmtPct(s.roe)}</td>
+      <td>${verdict(s.scoreFF-50)}</td>
+    </tr>`;
+  });
+  setHTML('famaTable',html+'</tbody></table>');
+  const t10=FAMA.slice(0,10);
+  const aF=k=>avg(t10.map(s=>s[k]))||0;
+  Plotly.newPlot('ffRadar',[{
+    type:'scatterpolar',
+    r:[aF('hml'),aF('rmw'),aF('smb'),aF('mom'),aF('cma')],
+    theta:['Valor (HML)','Qualidade (RMW)','Tamanho (SMB)','Momentum','Conservador (CMA)'],
+    fill:'toself',fillcolor:'rgba(232,104,26,0.12)',line:{color:'#E8681A',width:2},name:'TOP 10'
+  }],{polar:{radialaxis:{visible:true,range:[0,100],gridcolor:'#D0C8BC'},bgcolor:'transparent'},paper_bgcolor:'transparent',margin:{t:20,b:20,l:40,r:40},font:{family:'Lato,sans-serif',size:10,color:'#6B5E53'},height:230,showlegend:false},PCFG);
+}
+
+// ── 20. SETORIAL MODULE ──────────────────────────────────────────
+function renderSetorial() {
+  const grp={};
+  D_FILTRADO.forEach(s=>{const st=sec(s.t);if(!grp[st])grp[st]=[];grp[st].push(s);});
+  const allPL=D_FILTRADO.map(s=>s.pl).filter(x=>x&&x>0&&x<80);
+  const allROE=D_FILTRADO.map(s=>s.roe).filter(x=>x&&x>0);
+  const allDY=D_FILTRADO.map(s=>s.dy).filter(x=>x&&x>0);
+  setText('s-univ',  D_FILTRADO.length);setText('s-lpa',D_FILTRADO.filter(s=>s.lpa&&s.lpa>0).length);
+  setText('s-plmed', fmt(median(allPL))+'x');setText('s-roemd',fmtPct(median(allROE)));setText('s-dymd',fmtPct(median(allDY)));
+  setText('s-badge', D_FILTRADO.length+' ações / '+Object.keys(grp).length+' setores');
+  const rows=Object.entries(grp).sort((a,b)=>b[1].length-a[1].length);
+  const roeArr=[],plArr=[],secArr=[];
+  let html=`<table><thead><tr><th>Setor</th><th>N</th><th>P/L Med.</th><th>P/VP Med.</th><th>ROE Med.</th><th>DY Med.</th><th>EV/EBIT</th><th>Margem Liq.</th><th>ROIC</th><th>CAGR Rec.</th><th>Atratividade</th></tr></thead><tbody>`;
+  rows.forEach(([st,stocks])=>{
+    const pls=stocks.map(s=>s.pl).filter(x=>x&&x>0&&x<80);
+    const pvps=stocks.map(s=>s.pvp).filter(x=>x&&x>0&&x<10);
+    const roes=stocks.map(s=>s.roe).filter(x=>x&&x>0);
+    const dys=stocks.map(s=>s.dy).filter(x=>x&&x>0);
+    const evs=stocks.map(s=>s.ev).filter(x=>x&&x>0&&x<50);
+    const mls=stocks.map(s=>s.ml).filter(x=>x!=null&&isFinite(x));
+    const rois=stocks.map(s=>s.roi).filter(x=>x&&x>0);
+    const crs=stocks.map(s=>s.cr).filter(x=>x!=null&&isFinite(x));
+    const mPL=median(pls),mPVP=median(pvps),mROE=median(roes),mDY=median(dys);
+    const mEV=median(evs),mML=median(mls),mROI=median(rois),mCR=median(crs);
+    roeArr.push(mROE||0);plArr.push(mPL||0);secArr.push(st);
+    let sc=0;
+    if(mPL&&mPL>0) sc+=mPL<10?30:mPL<15?20:10;
+    if(mROE&&mROE>0) sc+=mROE>20?30:mROE>12?20:10;
+    if(mDY&&mDY>0) sc+=mDY>8?20:mDY>5?15:8;
+    const tag=sc>=65?'<span class="badge-cheap">Atrativo</span>':sc>=50?'<span class="badge-attr">Neutro</span>':'<span class="badge-fair">Menos atrativo</span>';
+    html+=`<tr><td><strong>${st}</strong></td><td class="tc">${stocks.length}</td>
+      <td class="tr">${mPL?fmt(mPL)+'x':'—'}</td><td class="tr">${mPVP?fmt(mPVP)+'x':'—'}</td>
+      <td class="tr ${mROE&&mROE>15?'pos':mROE&&mROE<8?'neg':''}">${fmtPct(mROE)}</td>
+      <td class="tr ${mDY&&mDY>7?'pos':''}">${fmtPct(mDY)}</td>
+      <td class="tr">${mEV?fmt(mEV)+'x':'—'}</td>
+      <td class="tr ${mML&&mML>15?'pos':mML&&mML<0?'neg':''}">${fmtPct(mML)}</td>
+      <td class="tr ${mROI&&mROI>15?'pos':''}">${fmtPct(mROI)}</td>
+      <td class="tr ${mCR&&mCR>15?'pos':mCR&&mCR<0?'neg':''}">${fmtPct(mCR)}</td>
+      <td>${tag}</td></tr>`;
+  });
+  setHTML('sectorTable',html+'</tbody></table>');
+  const s1=roeArr.map((r,i)=>({r,pl:plArr[i],st:secArr[i]})).sort((a,b)=>b.r-a.r);
+  Plotly.newPlot('sRoeChart',[{type:'bar',orientation:'h',y:s1.map(x=>x.st),x:s1.map(x=>x.r),
+    marker:{color:s1.map(x=>x.r>20?'#3A4A1E':x.r>12?'#7C8B3A':x.r>0?'#E8681A':'#C0392B')},
+    text:s1.map(x=>x.r?x.r.toFixed(1)+'%':'—'),textposition:'outside',hovertemplate:'%{y}: %{x:.1f}%<extra></extra>'}],
+    pL({height:290,xaxis:{ticksuffix:'%',gridcolor:'#D0C8BC'},margin:{t:5,b:30,l:120,r:60},showlegend:false}),PCFG);
+  const s2=plArr.map((pl,i)=>({pl,st:secArr[i]})).filter(x=>x.pl>0).sort((a,b)=>a.pl-b.pl);
+  Plotly.newPlot('sPLChart',[{type:'bar',orientation:'h',y:s2.map(x=>x.st),x:s2.map(x=>x.pl),
+    marker:{color:s2.map(x=>x.pl<8?'#3A4A1E':x.pl<12?'#7C8B3A':x.pl<18?'#E8681A':'#C0392B')},
+    text:s2.map(x=>x.pl.toFixed(1)+'x'),textposition:'outside',hovertemplate:'%{y}: %{x:.1f}x<extra></extra>'}],
+    pL({height:290,xaxis:{gridcolor:'#D0C8BC'},margin:{t:5,b:30,l:120,r:50},showlegend:false}),PCFG);
+}
+
+// ── 21. MACRO MODULE — BCB/SGS ───────────────────────────────────
+const API_CACHE={};
+const CACHE_TTL=10*60*1000;
+const MACRO_CACHE_TTL=3*60*60*1000; // 3 horas
+
+async function fetchAPI(url,key,ttl=CACHE_TTL) {
+  const c=API_CACHE[key];
+  if(c&&Date.now()-c.ts<ttl) return c.data;
+  try{
+    // Tenta direto primeiro (funciona em HTTP/HTTPS)
+    if (!_isLocalFile()) {
+      const r=await fetch(url,{signal:AbortSignal.timeout(8000)});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const data=await r.json();
+      API_CACHE[key]={data,ts:Date.now()};
+      return data;
+    }
+    // Modo file:// → usa proxies CORS
+    const data = await _fetchViaProxy(url);
+    API_CACHE[key]={data,ts:Date.now()};
+    return data;
+  }catch(e){
+    // Fallback: tenta proxies se direto falhou (pode ser CORS em HTTPS também)
+    if (!_isLocalFile()) {
+      try {
+        const data = await _fetchViaProxy(url);
+        API_CACHE[key]={data,ts:Date.now()};
+        return data;
+      } catch(e2) { /* ignora */ }
+    }
+    console.warn('[Macro]',key,e.message);
+    return null;
+  }
+}
+
+/** SELIC Meta — BCB SGS 432 */
+async function getSelic() {
+  return fetchAPI('https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/3?formato=json','selic',MACRO_CACHE_TTL);
+}
+/** IPCA mensal — BCB SGS 433 (série oficial IBGE) — últimos 13 para acumular 12m */
+async function getIPCA() {
+  return fetchAPI('https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados/ultimos/13?formato=json','ipca',MACRO_CACHE_TTL);
+}
+/** IGP-M mensal — BCB SGS 189 */
+async function getIGPM() {
+  return fetchAPI('https://api.bcb.gov.br/dados/serie/bcdata.sgs.189/dados/ultimos/13?formato=json','igpm',MACRO_CACHE_TTL);
+}
+/** USD/BRL PTAX venda — BCB OData (cotação oficial, atualização diária) */
+async function getUSD() {
+  const today = new Date();
+  const past  = new Date(today); past.setDate(past.getDate()-7);
+  const fdt   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const url   = `https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarPeriodo(dataInicial=@di,dataFinalCotacao=@df)?@di='${fdt(past)}'&@df='${fdt(today)}'&$top=5&$orderby=dataHoraCotacao%20desc&$format=json&$select=cotacaoVenda,dataHoraCotacao`;
+  return fetchAPI(url,'usd_ptax',MACRO_CACHE_TTL);
+}
+/** PIB — BCB SGS 4380 (variação real trimestral) */
+async function getPIB() {
+  return fetchAPI('https://api.bcb.gov.br/dados/serie/bcdata.sgs.4380/dados/ultimos/2?formato=json','pib',MACRO_CACHE_TTL);
+}
+
+/** Último valor de uma série SGS */
+const bcbLast = d => {
+  if(!d||!Array.isArray(d)||!d.length) return null;
+  const v=parseFloat((d[d.length-1]?.valor||'').replace(',','.'));
+  return isFinite(v)?v:null;
+};
+/** Acumula últimos 12 meses de série mensal (composição) */
+const bcbSum12 = d => {
+  if(!d||!Array.isArray(d)||d.length<2) return null;
+  let acc=1;
+  d.slice(-12).forEach(r=>{const v=parseFloat((r.valor||'').replace(',','.')); if(isFinite(v)) acc*=(1+v/100);});
+  return parseFloat(((acc-1)*100).toFixed(2));
+};
+
+const FALLBACK={selic:14.75,ipca:5.48,usd:5.76,igpm:6.40};
+
+function updateMacroCard(idVal,idSub,idChg,val,sub,chg,posIsGood=true) {
+  const el=document.getElementById(idVal);
+  if(el){el.textContent=val;el.classList.remove('loading');}
+  if(document.getElementById(idSub)) document.getElementById(idSub).textContent=sub;
+  if(idChg&&chg!=null&&document.getElementById(idChg)){
+    const chgEl=document.getElementById(idChg);
+    const up=chg>0;
+    chgEl.textContent=(up?'▲ +':'▼ ')+Math.abs(chg).toFixed(2)+' pp vs. anterior';
+    chgEl.style.color=up==posIsGood?'#27AE60':'#C0392B';
+    chgEl.style.fontWeight='700';
+  }
+}
+
+function calcMacroScore(selic,ipca,pib,usd) {
+  let s=0;
+  if(selic!=null){s+=selic<8?30:selic<10?22:selic<12?15:selic<15?10:4;}else s+=12;
+  if(ipca!=null) {s+=ipca<3.5?30:ipca<5?22:ipca<7?14:ipca<10?7:2;}else s+=14;
+  if(pib!=null)  {s+=pib>4?25:pib>2?20:pib>0?12:3;}else s+=12;
+  if(usd!=null)  {s+=usd<4.5?15:usd<5.5?11:usd<6?6:2;}else s+=7;
+  return clamp(s,0,100);
+}
+
+async function renderMacro() {
+  const [dSelic,dIpca,dUsd,dIgpm,dPib]=await Promise.all([
+    getSelic(), getIPCA(), getUSD(), getIGPM(), getPIB(),
+  ]);
+
+  const selic  = bcbLast(dSelic) ?? FALLBACK.selic;
+  const ipca12 = bcbSum12(dIpca) ?? FALLBACK.ipca;
+  const igpm12 = bcbSum12(dIgpm) ?? FALLBACK.igpm;
+  const pib    = bcbLast(dPib)   ?? null;
+
+  // USD via PTAX OData
+  let usd = FALLBACK.usd;
+  try {
+    const arr = Array.isArray(dUsd?.value) ? dUsd.value : [];
+    if (arr.length) usd = parseFloat(arr[0].cotacaoVenda) || FALLBACK.usd;
+  } catch(e){}
+
+  const selicPrev = dSelic?.length >= 2
+    ? parseFloat((dSelic[dSelic.length-2]?.valor||'').replace(',','.'))
+    : null;
+
+  updateMacroCard('ml-selic','ml-selic-sub','ml-selic-chg', fmt(selic)+'%',  'SELIC Meta — BCB SGS 432',                       selicPrev!=null&&isFinite(selicPrev)?selic-selicPrev:null, false);
+  updateMacroCard('ml-ipca', 'ml-ipca-sub', null,           fmt(ipca12)+'%', 'IPCA acumulado 12m — BCB SGS 433',                null, false);
+  updateMacroCard('ml-usd',  'ml-usd-sub',  null,           'R$ '+fmt(usd,2),'USD/BRL PTAX venda — BCB OData',                 null, false);
+  updateMacroCard('ml-igpm', 'ml-igpm-sub', null,           fmt(igpm12)+'%', 'IGP-M acumulado 12m — BCB SGS 189',              null, false);
+
+  // Atualiza Ke/CAPM com SELIC live
+  CDI_ = selic;
+  KE   = (CDI_ + ERP) / 100;
+  const keReal = selic + ERP;
+  setText('capm-rf', fmt(selic)+'%');
+  setText('capm-ke', fmt(keReal)+'%');
+  setText('capm-pe', fmt(100/keReal,1)+'x');
+  setText('capm-rf-explain', fmt(selic)+'%');
+  setText('capm-ke-explain', fmt(keReal)+'%');
+  document.getElementById('hd-selic').textContent = 'SELIC '+fmt(selic)+'%';
+
+  const ms=calcMacroScore(selic,ipca12,pib,usd);
+  const ret=[selic*0.88,selic,selic+2.5,selic+1.5,14,12,selic+(ms-50)/10];
+  const lbls=['LCI/LCA','CDI / DI','IPCA+','Créd. Privado','IDIV','IBOV Est.','Top Value Est.'];
+  Plotly.newPlot('macroChart',[{type:'bar',x:lbls,y:ret,
+    marker:{color:['#D0C8BC','#8A7E73','#6B5E53','#4A3F35','#3A4A1E','#7C8B3A','#E8681A']},
+    text:ret.map(v=>v.toFixed(1)+'%'),textposition:'outside',
+    hovertemplate:'%{x}<br>%{y:.1f}% a.a.<extra></extra>'}],
+    pL({height:215,yaxis:{ticksuffix:'%',gridcolor:'#D0C8BC',title:'% a.a.'},margin:{t:15,b:55,l:55,r:15}}),PCFG);
+}
+
+// ── 22. INIT ─────────────────────────────────────────────────────
+function init() {
+  // Set date
+  const d=new Date();
+  setText('hd-date',d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}));
+
+  // Universe indicators
+  setText('fu-total',    D.length);
+  setText('fu-filtered', D_FILTRADO.length);
+  setText('fu-lpa',      D_FILTRADO.filter(s=>s.lpa&&s.lpa>0).length);
+
+  // Render default tab
+  rendered['intersecao']=true;
+  renderIntersecao();
+
+  // Inicia busca de preços ao vivo imediatamente ao carregar a página
+  refreshLivePrices();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
